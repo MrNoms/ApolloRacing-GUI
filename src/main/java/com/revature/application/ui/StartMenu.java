@@ -1,15 +1,18 @@
 package com.revature.application.ui;
 
+import com.revature.application.models.User;
 import com.revature.application.services.UserService;
+import com.revature.application.util.annotations.Inject;
 import com.revature.application.util.custom_exceptions.InvalidUserException;
+import com.sun.tools.javac.Main;
 
 import java.io.PrintStream;
 import java.util.Scanner;
 
 public class StartMenu implements IMenu{
+    @Inject
     private final UserService mUserService;
-    private final PrintStream cout = System.out;
-    private final Scanner cin = new Scanner(System.in);
+    @Inject
     public StartMenu(UserService us) { mUserService = us; }
 
     @Override
@@ -62,49 +65,81 @@ public class StartMenu implements IMenu{
         String pWord;
         String eMail;
         String phone;
+        credCreation:
+        {
+            while (true) {
+                cout.print(mUserService.NAMEREQ);
+                while (true) {
+                    uName = cin.nextLine();
+                    try {
+                        mUserService.isValidUsername(uName);
+                        cout.println("MAKE SURE NO ONE HAS THIS NAME");
+                        break;
+                    } catch (InvalidUserException iu) {
+                        cout.print(iu.getMessage());
+                    }
+                }
+                cout.print(mUserService.PASSREQ);
+                while (true) {
+                    pWord = cin.nextLine();
+                    try {
+                        if (mUserService.isValidPassword(pWord)) {
+                            cout.print("Please confirm password: ");
+                            if (pWord.equals(cin.nextLine())) break;
+                            else cout.print("Passwords do not match.\nEnter: ");
+                        }
+                    } catch (InvalidUserException iu) {
+                        cout.print(iu.getMessage());
+                    }
+                }
 
-        cout.print(mUserService.NAMEREQ);
-        while(true) {
-            uName = cin.nextLine();
-            try {
-                mUserService.isValidUsername(uName);
-                cout.println("MAKE SURE NO ONE HAS THIS NAME");
-                break;
-            }
-            catch(InvalidUserException iu) {
-                cout.print(iu.getMessage());
-            }
-        }
-        cout.print(mUserService.PASSREQ);
-        while(true) {
-            pWord = cin.nextLine();
-            try {
-                if(mUserService.isValidPassword(pWord)) {
-                    cout.print("Please confirm password: ");
-                    if(pWord.equals(cin.nextLine())) break;
-                    else cout.print("Passwords do not match.\nEnter: ");
+                cout.print("E-Mail: ");
+                while (true) {
+                    eMail = cin.nextLine();
+                    try {
+                        if (mUserService.isValidEmail(eMail)) break;
+                    } catch (InvalidUserException iu) {
+                        cout.print(iu.getMessage());
+                    }
+                }
+                cout.print("Please enter Phone # with your country code if you it: ");
+                while (true) {
+                    phone = cin.nextLine();
+                    try {
+                        if (mUserService.isValidPhone(phone)) break;
+                    } catch (InvalidUserException iu) {
+                        cout.print(iu.getMessage());
+                    }
+                }
+
+                credConfirm:
+                {
+                    while (true) {
+                        cout.print("Please confirm your username and account information:\n" +
+                                "Username: " + uName +
+                                "\nEmail: " + eMail +
+                                "\nPhone: " + phone +
+                                "\nEnter y/n: ");
+                        switch (cin.nextLine().toLowerCase()) {
+                            case "y":
+                                User newUser = new User(uName, pWord, eMail, phone);
+                                try {
+                                    mUserService.createUser(newUser);
+                                    new MainMenu(newUser).start();
+                                }
+                                catch(Exception e) {
+                                    cout.println("Account creation failed\n"+e.getMessage());
+                                }
+                                break credCreation;
+                            case "x":
+                                break credConfirm;
+                            default:
+                                cout.println("Invalid input.");
+                                break;
+                        }
+                    }
                 }
             }
-            catch(InvalidUserException iu) {
-                cout.print(iu.getMessage());
-            }
         }
-
-        cout.print("E-Mail: ");
-        while(true) {
-            eMail = cin.nextLine();
-            try {
-                if(mUserService.isValidEmail(eMail)) break;
-            }
-            catch(InvalidUserException iu) {
-                cout.print(iu.getMessage());
-            }
-        }
-        cout.print("Phone #: ");
-        phone = cin.nextLine();
-
-        cout.println("Need to have user confirm all entered information");
-
-        cout.println("Add the user to the database");
     }
 }

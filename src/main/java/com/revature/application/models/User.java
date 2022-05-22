@@ -13,9 +13,13 @@ public class User {
     private boolean m2FAEmail;
     private boolean m2FAPhone;
 
-    public User() {
+    public User(String name, String pass, String mail, String num) {
         mID = UUID.randomUUID().toString();
         mRole = UserStatus.DEFAULT;
+        mUsername = name;
+        mPassword = pass;
+        mEmail = mail;
+        mPhone = num;
         m2FAEmail = false;
         m2FAPhone = false;
     }
@@ -42,4 +46,25 @@ public class User {
 
     public boolean getPhoneAuth() { return m2FAPhone; }
     public void togglePhoneAuth() { m2FAPhone = !m2FAPhone; }
+
+    public String toFileString() {
+        return String.format("%s:%s:%s:%s:%s:%s:%s:%s|\n",
+                mID, mRole, mUsername, mPassword,
+                mEmail, mPhone, m2FAEmail, m2FAPhone);
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "Username: %s\n" +
+                        "Password: *****\n" +
+                        "Email: %s" +
+                        "Phone: %s" +
+                        "2-Factor Authentication:" +
+                        "\tEmail: %sabled" +
+                        "\tPhone: %s",
+                mUsername, mEmail, mPhone, m2FAEmail?"En":"Dis",
+                m2FAPhone?"En":"Dis"
+        );
+    }
 }
