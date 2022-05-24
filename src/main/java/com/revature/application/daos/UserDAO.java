@@ -1,26 +1,20 @@
 package com.revature.application.daos;
 
 import com.revature.application.models.User;
+import com.revature.application.util.database.DatabaseConnection;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserDAO implements CrudDAO<User> {
-    String path = "src/main/res/database/user.txt";
+    // String path = "src/main/res/database/user.txt";
+    Connection con = DatabaseConnection.getCon();
 
     @Override
-    public void save(User u) {
-        try {
-            File base = new File(path);
-            FileWriter fin = new FileWriter(base, true);
-            fin.write(u.toFileString());
-            fin.close();
-        }
-        catch(IOException ioe) {
-            throw new RuntimeException(ioe.getMessage());
-        }
+    public void save(User u) throws RuntimeException {
+
     }
 
     @Override
@@ -31,6 +25,11 @@ public class UserDAO implements CrudDAO<User> {
     @Override
     public List<User> getAll() {
         return null;
+    }
+
+    public List<String> getAllUsernames() {
+        List<String> out = new ArrayList<>();
+        return out;
     }
 
     @Override

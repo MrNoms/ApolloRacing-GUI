@@ -48,7 +48,7 @@ public class User {
     public void togglePhoneAuth() { m2FAPhone = !m2FAPhone; }
 
     public String toFileString() {
-        return String.format("%s:%s:%s:%s:%s:%s:%s:%s|\n",
+        return String.format("%s:%s:%s:%s:%s:%s:%s:%s|",
                 mID, mRole, mUsername, mPassword,
                 mEmail, mPhone, m2FAEmail, m2FAPhone);
     }

@@ -4,10 +4,6 @@ import com.revature.application.models.User;
 import com.revature.application.services.UserService;
 import com.revature.application.util.annotations.Inject;
 import com.revature.application.util.custom_exceptions.InvalidUserException;
-import com.sun.tools.javac.Main;
-
-import java.io.PrintStream;
-import java.util.Scanner;
 
 public class StartMenu implements IMenu{
     @Inject
@@ -53,7 +49,13 @@ public class StartMenu implements IMenu{
     }
 
     private void login() {
-        cout.println("Needs implement");
+        String uName;
+        String pWord;
+        cout.print("UserName: ");
+        uName = cin.nextLine();
+        cout.print("Password: ");
+        pWord = cin.nextLine();
+
     }
 
     private void signup() {
@@ -72,9 +74,9 @@ public class StartMenu implements IMenu{
                 while (true) {
                     uName = cin.nextLine();
                     try {
-                        mUserService.isValidUsername(uName);
-                        cout.println("MAKE SURE NO ONE HAS THIS NAME");
-                        break;
+                        if(mUserService.isValidUsername(uName) &&
+                                mUserService.isNotDuplicateUsername(uName))
+                            break;
                     } catch (InvalidUserException iu) {
                         cout.print(iu.getMessage());
                     }
@@ -89,7 +91,7 @@ public class StartMenu implements IMenu{
                             else cout.print("Passwords do not match.\nEnter: ");
                         }
                     } catch (InvalidUserException iu) {
-                        cout.print(iu.getMessage());
+                        cout.print(iu.getMessage()+"\n: ");
                     }
                 }
 
@@ -99,7 +101,7 @@ public class StartMenu implements IMenu{
                     try {
                         if (mUserService.isValidEmail(eMail)) break;
                     } catch (InvalidUserException iu) {
-                        cout.print(iu.getMessage());
+                        cout.print(iu.getMessage()+": ");
                     }
                 }
                 cout.print("Please enter Phone # with your country code if you it: ");
@@ -108,7 +110,7 @@ public class StartMenu implements IMenu{
                     try {
                         if (mUserService.isValidPhone(phone)) break;
                     } catch (InvalidUserException iu) {
-                        cout.print(iu.getMessage());
+                        cout.print(iu.getMessage()+": ");
                     }
                 }
 

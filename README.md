@@ -21,7 +21,7 @@ would make virtual shopping much simpler!
 
 ## Models
 
-- Customer
+-- Customer
 - Store
 - Orders
 - Product
