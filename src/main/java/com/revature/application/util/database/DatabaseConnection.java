@@ -22,10 +22,13 @@ public class DatabaseConnection {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
             /* using prop object to load url, username, password */
-            prop.load(new FileReader("src/main/res/db.properties"));
+            prop.load(new FileReader("src/main/res/database/db.properties"));
 
             /* actually getting this connection */
-            con = DriverManager.getConnection(prop.getProperty("url"), prop.getProperty("username"), prop.getProperty("password"));
+            con = DriverManager.getConnection(
+                    prop.getProperty("url"),
+                    prop.getProperty("username"),
+                    prop.getProperty("password"));
 
             /* throw Exception if connection was not successful */
         } catch (ClassNotFoundException | SQLException | IOException e) {

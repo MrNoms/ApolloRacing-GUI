@@ -5,6 +5,7 @@ import com.revature.application.models.User;
 import com.revature.application.util.annotations.Inject;
 import com.revature.application.util.custom_exceptions.InvalidUserException;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,9 +26,9 @@ public class UserService {
         mUserDAO = uDAO;
     }
 
-    public void createUser(User u) {
+    public void createUser(User u) throws SQLException {
         try { mUserDAO.save(u); }
-        catch(Exception e) {
+        catch(SQLException e) {
             throw e;
         }
     }

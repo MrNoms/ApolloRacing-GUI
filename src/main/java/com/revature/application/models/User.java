@@ -62,7 +62,7 @@ public class User {
                         "Phone: %s" +
                         "2-Factor Authentication:" +
                         "\tEmail: %sabled" +
-                        "\tPhone: %s",
+                        "\tPhone: %sabled",
                 mUsername, mEmail, mPhone, m2FAEmail?"En":"Dis",
                 m2FAPhone?"En":"Dis"
         );
