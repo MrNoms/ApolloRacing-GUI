@@ -7,7 +7,7 @@ would make virtual shopping much simpler!
 
 ## Functionality
 
--- add a new customer
+- add a new customer
 - search customers by name
 - display details of an order
 - place orders to store locations for customers
@@ -21,7 +21,7 @@ would make virtual shopping much simpler!
 
 ## Models
 
--- Customer
+- Customer
 - Store
 - Orders
 - Product
