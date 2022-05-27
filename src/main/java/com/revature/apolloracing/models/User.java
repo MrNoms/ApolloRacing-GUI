@@ -13,15 +13,29 @@ public class User {
     private boolean m2FAEmail;
     private boolean m2FAPhone;
 
-    public User(String name, String pass, String mail, String num) {
+    public User() {
         mID = UUID.randomUUID().toString();
         mRole = UserStatus.DEFAULT;
+        m2FAEmail = false;
+        m2FAPhone = false;
+    }
+    public User(String name, String pass, String mail, String num) {
+        this();
         mUsername = name;
         mPassword = pass;
         mEmail = mail;
         mPhone = num;
-        m2FAEmail = false;
-        m2FAPhone = false;
+    }
+    public User(String id, String role, String name, String pass, String mail,
+                String num, Boolean email2fa, Boolean phone2fa) {
+        mID = id;
+        mRole = UserStatus.valueOf(role);
+        mUsername = name;
+        mPassword = pass;
+        mEmail = mail;
+        mPhone = num;
+        m2FAEmail = email2fa;
+        m2FAPhone = phone2fa;
     }
 
     public String getID() { return mID; }
@@ -46,12 +60,6 @@ public class User {
 
     public boolean getPhoneAuth() { return m2FAPhone; }
     public void togglePhoneAuth() { m2FAPhone = !m2FAPhone; }
-
-    public String toFileString() {
-        return String.format("%s:%s:%s:%s:%s:%s:%s:%s|",
-                mID, mRole, mUsername, mPassword,
-                mEmail, mPhone, m2FAEmail, m2FAPhone);
-    }
 
     @Override
     public String toString() {

@@ -6,8 +6,6 @@ import com.revature.application.util.annotations.Inject;
 import com.revature.application.util.custom_exceptions.InvalidUserException;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class UserService {
     public final String NAMEREQ =
@@ -26,10 +24,19 @@ public class UserService {
         mUserDAO = uDAO;
     }
 
-    public void createUser(User u) throws SQLException {
+    public void createUser(User u) {
         try { mUserDAO.save(u); }
         catch(SQLException e) {
-            throw e;
+            throw new InvalidUserException(e.getMessage()+
+                    "\nSQLState: "+e.getSQLState());
+        }
+    }
+
+    public void removeUser(User u) {
+        try { mUserDAO.delete(u); }
+        catch(SQLException e) {
+            throw new InvalidUserException(e.getMessage()+
+                    "\nSQLState: "+e.getSQLState());
         }
     }
 
@@ -40,8 +47,8 @@ public class UserService {
     }
 
     public boolean isNotDuplicateUsername(String uName) throws InvalidUserException {
-        if (mUserDAO.getAllUsernames().contains(uName))
-            throw new InvalidUserException("Username Unavailable"+NAMEREQ);
+        if (mUserDAO.findUsername(uName))
+            throw new InvalidUserException("Username Unavailable. "+NAMEREQ);
         return true;
     }
 
@@ -57,6 +64,15 @@ public class UserService {
         throw new InvalidUserException(new String(error));
     }
 
+    public User getValidCredentials(String uName, String pWord) throws InvalidUserException {
+        User out;
+        try { out = mUserDAO.getByCredentials(uName, pWord); }
+        catch (SQLException e) {
+            throw new InvalidUserException(e.getMessage());
+        }
+        return out;
+    }
+
     public boolean isValidEmail(String mail) throws InvalidUserException {
         if(mail.toLowerCase().matches("^(?!.*[-.]{2})[\\w.-]+(?!@\\.)@[a-z-.]+\\.[a-z]{2,3}"))
             return true;
@@ -64,7 +80,7 @@ public class UserService {
     }
 
     public boolean isValidPhone(String pNum) throws InvalidUserException {
-        if(pNum.matches("^(|(\\d{1,3}|(1|44)-\\d{3}) ?)(?!\\(\\d{3}\\)[.-])(\\(\\d{3}\\) ?|\\d{3})([ .-]?)\\d{3}\\5\\d{4}"))
+        if(pNum.matches("^(|(\\d{1,3}|(1|44)-\\d{3}) ?)(?!\\(\\d{3}\\)[.-])(\\(\\d{3}\\) ?|\\d{3})[ .-]?\\d{3}[ .-]?\\d{4}"))
             return true;
         throw new InvalidUserException("Please enter a valid phone number");
     }

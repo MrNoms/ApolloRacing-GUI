@@ -28,7 +28,7 @@ public class StartMenu implements IMenu{
                         break;
                     case "x":
                         goodbyeMessage();
-                        break MENU; //break to this break label;
+                        break MENU;
                     default:
                         cout.println("\nInvalid input.");
                         break;
@@ -38,7 +38,7 @@ public class StartMenu implements IMenu{
     }
 
     private void welcomeMessage() {
-        cout.println("\nWelcome to Application\n" +
+        cout.println("\r\nWelcome to Application\n" +
                 "[1] Login\n" +
                 "[2] Signup\n" +
                 "[x] Exit\n");
@@ -51,28 +51,50 @@ public class StartMenu implements IMenu{
     private void login() {
         String uName;
         String pWord;
-        cout.print("UserName: ");
-        uName = cin.nextLine();
-        cout.print("Password: ");
-        pWord = cin.nextLine();
+        User u;
+        while(true) {
+            cout.print("Type exit at any point to end this process and go back\n" +
+                    "to the start menu." +
+                    "\nUserName: ");
+            uName = cin.nextLine();
+            if(uName.equalsIgnoreCase("exit"))
+                return;
+            cout.print("Password: ");
+            pWord = cin.nextLine();
+            if(pWord.equalsIgnoreCase("exit"))
+                return;
+
+            try {
+                u = mUserService.getValidCredentials(uName, pWord);
+                break;
+            } catch (InvalidUserException iu) {
+                cout.println(iu.getMessage());
+            }
+        }
+        new MainMenu(u).start();
 
     }
 
     private void signup() {
         cout.println("\nBeautiful! You on your way to... something...\n" +
                 "Let's get started creating your store site profile.\n" +
-                "Please create account credentials and provide contact information\n");
+                "Please create account credentials and provide contact information\n" +
+                "Type \"exit\" at any time to return to the previous menu");
 
         String uName;
         String pWord;
         String eMail;
         String phone;
+
         credCreation:
         {
             while (true) {
                 cout.print(mUserService.NAMEREQ);
                 while (true) {
                     uName = cin.nextLine();
+                    if(uName.equalsIgnoreCase("exit"))
+                        break credCreation;
+
                     try {
                         if(mUserService.isValidUsername(uName) &&
                                 mUserService.isNotDuplicateUsername(uName))
@@ -81,9 +103,12 @@ public class StartMenu implements IMenu{
                         cout.print(iu.getMessage());
                     }
                 }
-                cout.print(mUserService.PASSREQ);
+                cout.print(mUserService.PASSREQ+": ");
                 while (true) {
                     pWord = cin.nextLine();
+                    if(pWord.equalsIgnoreCase("exit"))
+                        break credCreation;
+
                     try {
                         if (mUserService.isValidPassword(pWord)) {
                             cout.print("Please confirm password: ");
@@ -98,6 +123,8 @@ public class StartMenu implements IMenu{
                 cout.print("E-Mail: ");
                 while (true) {
                     eMail = cin.nextLine();
+                    if(eMail.equalsIgnoreCase("exit"))
+                        break credCreation;
                     try {
                         if (mUserService.isValidEmail(eMail)) break;
                     } catch (InvalidUserException iu) {
@@ -107,6 +134,9 @@ public class StartMenu implements IMenu{
                 cout.print("Please enter Phone # with your country code if you it: ");
                 while (true) {
                     phone = cin.nextLine();
+                    if(phone.equalsIgnoreCase("exit"))
+                        break credCreation;
+
                     try {
                         if (mUserService.isValidPhone(phone)) break;
                     } catch (InvalidUserException iu) {
@@ -129,11 +159,12 @@ public class StartMenu implements IMenu{
                                     mUserService.createUser(newUser);
                                     new MainMenu(newUser).start();
                                 }
-                                catch(Exception e) {
-                                    cout.println("Account creation failed\n"+e.getMessage());
+                                catch(InvalidUserException iu) {
+                                    cout.println("Account creation failed\n"+iu.getMessage());
                                 }
+                            case "exit":
                                 break credCreation;
-                            case "x":
+                            case "n":
                                 break credConfirm;
                             default:
                                 cout.println("Invalid input.");

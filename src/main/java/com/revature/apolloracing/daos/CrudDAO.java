@@ -8,11 +8,11 @@ public interface CrudDAO<T> {
 
     void save(T obj) throws SQLException;
 
-    T getByID(String id);
+    T getByID(String id) throws SQLException;
 
-    List<T> getAll();
+    List<T> getAll() throws SQLException;
 
-    void update(T obj);
+    void update(T obj) throws SQLException;
 
-    void delete(T obj);
+    void delete(T obj) throws SQLException;
 }
