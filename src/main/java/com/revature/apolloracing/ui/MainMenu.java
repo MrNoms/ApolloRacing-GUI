@@ -1,8 +1,8 @@
-package com.revature.application.ui;
+package com.revature.apolloracing.ui;
 
-import com.revature.application.models.User;
-import com.revature.application.models.UserStatus;
-import com.revature.application.util.annotations.Inject;
+import com.revature.apolloracing.models.User;
+import com.revature.apolloracing.models.User.UserStatus;
+import com.revature.apolloracing.util.annotations.Inject;
 
 public class MainMenu implements IMenu {
     @Inject
@@ -60,6 +60,7 @@ public class MainMenu implements IMenu {
                         if(permission.equals(UserStatus.ADMIN)) {
                             cout.println("Needs implement. Admin will add received supply to the appropriate\n" +
                                     "location");
+                            break;
                         }
                     default:
                         cout.println("\nInvalid input");

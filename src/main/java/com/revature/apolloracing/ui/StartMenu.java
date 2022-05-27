@@ -1,9 +1,9 @@
-package com.revature.application.ui;
+package com.revature.apolloracing.ui;
 
-import com.revature.application.models.User;
-import com.revature.application.services.UserService;
-import com.revature.application.util.annotations.Inject;
-import com.revature.application.util.custom_exceptions.InvalidUserException;
+import com.revature.apolloracing.models.User;
+import com.revature.apolloracing.services.UserService;
+import com.revature.apolloracing.util.annotations.Inject;
+import com.revature.apolloracing.util.custom_exceptions.InvalidUserException;
 
 public class StartMenu implements IMenu{
     @Inject
@@ -38,7 +38,8 @@ public class StartMenu implements IMenu{
     }
 
     private void welcomeMessage() {
-        cout.println("\r\nWelcome to Application\n" +
+        cout.println("\r\nWelcome to Apollo Racing Co. Your one stop shop for all\n" +
+                "your karting needs.\n" +
                 "[1] Login\n" +
                 "[2] Signup\n" +
                 "[x] Exit\n");
@@ -76,7 +77,7 @@ public class StartMenu implements IMenu{
     }
 
     private void signup() {
-        cout.println("\nBeautiful! You on your way to... something...\n" +
+        cout.println("\nBeautiful! You're one step closer to your place on the track\n" +
                 "Let's get started creating your store site profile.\n" +
                 "Please create account credentials and provide contact information\n" +
                 "Type \"exit\" at any time to return to the previous menu");

@@ -1,8 +1,9 @@
-package com.revature.application.models;
+package com.revature.apolloracing.models;
 
 import java.util.UUID;
 
 public class User {
+    public enum UserStatus { DEFAULT, ADMIN }
 
     private final String mID;
     private UserStatus mRole;
@@ -10,14 +11,10 @@ public class User {
     private String mPassword;
     private String mEmail;
     private String mPhone;
-    private boolean m2FAEmail;
-    private boolean m2FAPhone;
 
     public User() {
         mID = UUID.randomUUID().toString();
         mRole = UserStatus.DEFAULT;
-        m2FAEmail = false;
-        m2FAPhone = false;
     }
     public User(String name, String pass, String mail, String num) {
         this();
@@ -27,15 +24,13 @@ public class User {
         mPhone = num;
     }
     public User(String id, String role, String name, String pass, String mail,
-                String num, Boolean email2fa, Boolean phone2fa) {
+                String num) {
         mID = id;
         mRole = UserStatus.valueOf(role);
         mUsername = name;
         mPassword = pass;
         mEmail = mail;
         mPhone = num;
-        m2FAEmail = email2fa;
-        m2FAPhone = phone2fa;
     }
 
     public String getID() { return mID; }
@@ -55,24 +50,14 @@ public class User {
     public String getPhone() { return mPhone; }
     public void setPhone(String pNum) { mPhone = pNum; }
 
-    public boolean getEmailAuth() { return m2FAEmail; }
-    public void toggleEmailAuth() { m2FAEmail = !m2FAEmail; }
-
-    public boolean getPhoneAuth() { return m2FAPhone; }
-    public void togglePhoneAuth() { m2FAPhone = !m2FAPhone; }
-
     @Override
     public String toString() {
         return String.format(
                 "Username: %s\n" +
                         "Password: *****\n" +
                         "Email: %s" +
-                        "Phone: %s" +
-                        "2-Factor Authentication:" +
-                        "\tEmail: %sabled" +
-                        "\tPhone: %sabled",
-                mUsername, mEmail, mPhone, m2FAEmail?"En":"Dis",
-                m2FAPhone?"En":"Dis"
+                        "Phone: %s",
+                mUsername, mEmail, mPhone
         );
     }
 }

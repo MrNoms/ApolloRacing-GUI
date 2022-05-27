@@ -1,4 +1,4 @@
-package com.revature.application.ui;
+package com.revature.apolloracing.ui;
 
 import java.io.PrintStream;
 import java.util.Scanner;

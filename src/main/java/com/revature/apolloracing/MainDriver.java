@@ -1,8 +1,8 @@
-package com.revature.application;
+package com.revature.apolloracing;
 
-import com.revature.application.daos.UserDAO;
-import com.revature.application.services.UserService;
-import com.revature.application.ui.StartMenu;
+import com.revature.apolloracing.daos.UserDAO;
+import com.revature.apolloracing.services.UserService;
+import com.revature.apolloracing.ui.StartMenu;
 
 public class MainDriver {
     public static void main(String[] args) {

@@ -1,22 +1,21 @@
-package com.revature.application.daos;
+package com.revature.apolloracing.daos;
 
-import com.revature.application.models.User;
-import com.revature.application.util.custom_exceptions.InvalidUserException;
-import com.revature.application.util.database.DatabaseConnection;
-import com.revature.application.util.database.UserDBSchema.Cols;
+import com.revature.apolloracing.models.User;
+import com.revature.apolloracing.util.custom_exceptions.InvalidUserException;
+import com.revature.apolloracing.util.database.DatabaseConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDAO implements CrudDAO<User> {
+    public enum Cols { id, role, username, password, email, phone }
     Connection con = DatabaseConnection.getCon();
 
     private User getUser(ResultSet rs) throws SQLException {
-        return new User(rs.getString(Cols.ID), rs.getString(Cols.ROLE),
-                rs.getString(Cols.USERNAME), rs.getString(Cols.PASSWORD),
-                rs.getString(Cols.EMAIL), rs.getString(Cols.PHONE),
-                rs.getBoolean(Cols.EMAIL2FA), rs.getBoolean(Cols.PHONE2FA));
+        return new User(rs.getString(Cols.id.name()), rs.getString(Cols.role.name()),
+                rs.getString(Cols.username.name()), rs.getString(Cols.password.name()),
+                rs.getString(Cols.email.name()), rs.getString(Cols.phone.name()));
     }
 
     @Override
@@ -24,15 +23,13 @@ public class UserDAO implements CrudDAO<User> {
         PreparedStatement stmt = null;
         try {
             stmt = con.prepareStatement("INSERT INTO users VALUES (" +
-                            "?,?,?,?,?,?,?,?);");
+                            "?,?,?,?,?,?);");
             stmt.setString(1, u.getID());
             stmt.setString(2, String.valueOf(u.getRole()));
             stmt.setString(3, u.getUserName());
             stmt.setString(4, u.getPassword());
             stmt.setString(5, u.getEmail());
             stmt.setString(6, u.getPhone());
-            stmt.setBoolean(7, u.getEmailAuth());
-            stmt.setBoolean(8, u.getPhoneAuth());
             stmt.executeUpdate();
         }
         catch (SQLException e) { throw e; }
@@ -119,7 +116,7 @@ public class UserDAO implements CrudDAO<User> {
                     "SELECT * FROM users WHERE username = ?;");
             stmt.setString(1, name);
             rs = stmt.executeQuery();
-            if (rs.next() && name.equals(rs.getString(Cols.USERNAME)))
+            if (rs.next() && name.equals(rs.getString(Cols.username.name())))
                 return true;
         }
         catch (SQLException ignore) {}
@@ -145,22 +142,18 @@ public class UserDAO implements CrudDAO<User> {
         try {
             stmt = con.prepareStatement(
                     "UPDATE users SET\n" +
-                            Cols.USERNAME+" = ?,\n" +
-                            Cols.PASSWORD+" = ?,\n" +
-                            Cols.EMAIL+" = ?,\n" +
-                            Cols.PHONE+" = ?,\n" +
-                            Cols.EMAIL2FA+" = ?,\n" +
-                            Cols.PHONE2FA+" = ?, \n" +
-                                "WHERE "+Cols.ID+" = ?;"
+                            Cols.username+" = ?,\n" +
+                            Cols.password+" = ?,\n" +
+                            Cols.email+" = ?,\n" +
+                            Cols.phone+" = ?,\n" +
+                                "WHERE "+Cols.id+" = ?;"
             );
             stmt.setString(1, obj.getUserName());
             stmt.setString(2, obj.getPassword());
             stmt.setString(3, obj.getEmail());
             stmt.setString(4, obj.getPhone());
-            stmt.setBoolean(5, obj.getEmailAuth());
-            stmt.setBoolean(6, obj.getPhoneAuth());
 
-            stmt.setString(7, obj.getID());
+            stmt.setString(5, obj.getID());
 
             stmt.executeUpdate();
         }
@@ -175,7 +168,7 @@ public class UserDAO implements CrudDAO<User> {
 
         try {
             stmt = con.prepareStatement(
-                    "DELETE FROM users WHERE "+Cols.ID+" = ?;"
+                    "DELETE FROM users WHERE "+Cols.id+" = ?;"
             );
             stmt.setString(1, obj.getID());
 

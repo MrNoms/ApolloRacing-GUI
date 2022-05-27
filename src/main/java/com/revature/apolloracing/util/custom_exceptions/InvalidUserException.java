@@ -1,4 +1,4 @@
-package com.revature.application.util.custom_exceptions;
+package com.revature.apolloracing.util.custom_exceptions;
 
 public class InvalidUserException extends RuntimeException {
     public InvalidUserException(String message) {

@@ -1,4 +1,4 @@
-package com.revature.application.util.annotations;
+package com.revature.apolloracing.util.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

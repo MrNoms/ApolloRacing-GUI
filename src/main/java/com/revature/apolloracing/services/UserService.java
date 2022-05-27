@@ -1,9 +1,9 @@
-package com.revature.application.services;
+package com.revature.apolloracing.services;
 
-import com.revature.application.daos.UserDAO;
-import com.revature.application.models.User;
-import com.revature.application.util.annotations.Inject;
-import com.revature.application.util.custom_exceptions.InvalidUserException;
+import com.revature.apolloracing.daos.UserDAO;
+import com.revature.apolloracing.models.User;
+import com.revature.apolloracing.util.annotations.Inject;
+import com.revature.apolloracing.util.custom_exceptions.InvalidUserException;
 
 import java.sql.SQLException;
 
@@ -34,6 +34,14 @@ public class UserService {
 
     public void removeUser(User u) {
         try { mUserDAO.delete(u); }
+        catch(SQLException e) {
+            throw new InvalidUserException(e.getMessage()+
+                    "\nSQLState: "+e.getSQLState());
+        }
+    }
+
+    public void updateUser(User u) {
+        try { mUserDAO.update(u); }
         catch(SQLException e) {
             throw new InvalidUserException(e.getMessage()+
                     "\nSQLState: "+e.getSQLState());
