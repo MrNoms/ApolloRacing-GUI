@@ -25,8 +25,8 @@ hs_err_pid*
 
 # Project files
 *.idea
-*out\
-*target\
+*out\*
+*target\*
 *.iml
 *.DS_Store
 *.properties
