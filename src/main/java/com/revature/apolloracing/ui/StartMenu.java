@@ -79,7 +79,7 @@ public class StartMenu implements IMenu{
     private void signup() {
         cout.println("\nBeautiful! You're one step closer to your place on the track\n" +
                 "Let's get started creating your store site profile.\n" +
-                "Please create account credentials and provide contact information\n" +
+                "\nPlease create account credentials and provide contact information\n" +
                 "Type \"exit\" at any time to return to the previous menu");
 
         String uName;
@@ -132,7 +132,7 @@ public class StartMenu implements IMenu{
                         cout.print(iu.getMessage()+": ");
                     }
                 }
-                cout.print("Please enter Phone # with your country code if you it: ");
+                cout.print("Please enter Phone # with your country code if you know it: ");
                 while (true) {
                     phone = cin.nextLine();
                     if(phone.equalsIgnoreCase("exit"))
@@ -155,7 +155,7 @@ public class StartMenu implements IMenu{
                                 "\nEnter y/n: ");
                         switch (cin.nextLine().toLowerCase()) {
                             case "y":
-                                User newUser = new User(uName, pWord, eMail, phone);
+                                User newUser = new User(null, null, uName, pWord, eMail, phone);
                                 try {
                                     mUserService.createUser(newUser);
                                     new MainMenu(newUser).start();

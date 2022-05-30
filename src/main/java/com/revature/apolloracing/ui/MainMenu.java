@@ -7,6 +7,7 @@ import com.revature.apolloracing.util.annotations.Inject;
 public class MainMenu implements IMenu {
     @Inject
     private final User mUser;
+    @Inject
     private final UserStatus permission;
     @Inject
     public MainMenu(User user) {
@@ -52,8 +53,8 @@ public class MainMenu implements IMenu {
                         }
                     case "7":
                         if(permission.equals(UserStatus.ADMIN)) {
-                            cout.println("Needs implement. Admin will use customer id to place their\n" +
-                                    "current cart as an order");
+                            cout.println("Needs implement. Admin will enter store location to be added\n" +
+                                    "to database");
                             break;
                         }
                     case "8":
@@ -79,8 +80,8 @@ public class MainMenu implements IMenu {
                 "[5] Change account settings\n" +
                 (permission.equals(UserStatus.ADMIN) ?
                     "[6] Search for customers\n"+
-                    "[7] Check-out order for customer\n" +
-                    "[8] Replenish inventory\n": "")+
+                    "[7] Add location\n" +
+                    "[8] Check inventory\n" : "")+
                 "[x] Exit\n");
 
     }
