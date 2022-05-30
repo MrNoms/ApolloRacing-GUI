@@ -1,7 +1,7 @@
 package com.revature.apolloracing.models;
 
 public class Location {
-    private final int mID;
+    private int mID;
     private String mCity;
     private String mState;
 
@@ -13,20 +13,17 @@ public class Location {
         return mCity;
     }
 
-    public void setCity(String city) {
-        mCity = city;
-    }
-
     public String getState() {
         return mState;
     }
 
-    public void setState(String state) {
-        mState = state;
+    public Location(Integer id) {
+        if(id != null) mID = id; //Database will automatically assign id #
     }
 
-    public Location(int id, String city, String state) {
-        mID = id;
+    public Location(Integer id,
+                    String city, String state) {
+        this(id);
         mCity = city;
         mState = state;
     }
@@ -34,7 +31,7 @@ public class Location {
     @Override
     public String toString() {
         return String.format(
-                "Apollo Racing Store %d at %s, %s",
+                "Apollo Racing Store #%d at %s, %s",
                 mID, mCity, mState
         );
     }

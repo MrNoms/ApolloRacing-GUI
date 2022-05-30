@@ -5,28 +5,20 @@ import java.util.UUID;
 public class User {
     public enum UserStatus { DEFAULT, ADMIN }
 
-    private final String mID;
+    private String mID;
     private UserStatus mRole;
     private String mUsername;
     private String mPassword;
     private String mEmail;
     private String mPhone;
 
-    public User() {
-        mID = UUID.randomUUID().toString();
-        mRole = UserStatus.DEFAULT;
+   public User(String id, String role) {
+        mID = id == null ? UUID.randomUUID().toString() : id;
+        mRole = role == null ? UserStatus.DEFAULT : UserStatus.valueOf(role);
     }
-    public User(String name, String pass, String mail, String num) {
-        this();
-        mUsername = name;
-        mPassword = pass;
-        mEmail = mail;
-        mPhone = num;
-    }
-    public User(String id, String role, String name, String pass, String mail,
-                String num) {
-        mID = id;
-        mRole = UserStatus.valueOf(role);
+    public User(String id, String role,
+                String name, String pass, String mail, String num) {
+        this(id, role);
         mUsername = name;
         mPassword = pass;
         mEmail = mail;
