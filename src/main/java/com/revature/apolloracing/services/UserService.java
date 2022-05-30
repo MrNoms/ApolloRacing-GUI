@@ -12,7 +12,7 @@ public class UserService {
             "Username must be alphanumeric and 8-20 characters long: ";
     private final String REPREQ = "\tNo repetitive characters\n";
     private final String ALNREQ = "\tUse letters and numbers\n";
-    private final String SPECREQ = "\tUse least one of the following ~ ` ! @ # $ % ^ & * ? ; :\n";
+    private final String SPECREQ = "\tUse at least one of the following ~ ` ! @ # $ % ^ & * ? ; :\n";
     private final String LENREQ = "\tBe 8-256 characters long\n";
     public final String PASSREQ = "Password requirements:\n"+
             REPREQ+ALNREQ+SPECREQ+LENREQ;
