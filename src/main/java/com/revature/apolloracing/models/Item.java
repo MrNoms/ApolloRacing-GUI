@@ -49,8 +49,8 @@ public class Item {
     public String toString() {
         return String.format(
                 "Part #: %d\t\t$%f\n" +
-                "Product Description: %s",
-                mID, mPrice, mDescription
+                "%s\t%s",
+                mID, mPrice, mName, mDescription
         );
     }
 }
