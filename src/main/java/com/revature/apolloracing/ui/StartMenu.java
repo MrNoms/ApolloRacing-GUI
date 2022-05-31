@@ -1,9 +1,12 @@
 package com.revature.apolloracing.ui;
 
+import com.revature.apolloracing.daos.LocationDAO;
 import com.revature.apolloracing.models.User;
+import com.revature.apolloracing.services.LocationService;
 import com.revature.apolloracing.services.UserService;
 import com.revature.apolloracing.util.annotations.Inject;
 import com.revature.apolloracing.util.custom_exceptions.InvalidUserException;
+import com.revature.apolloracing.util.database.LocationSchema;
 
 public class StartMenu implements IMenu{
     @Inject
@@ -19,7 +22,7 @@ public class StartMenu implements IMenu{
                 cout.print("\nEnter: ");
                 String input = cin.nextLine();
 
-                switch (input) {
+                switch (input.toLowerCase()) {
                     case "1":
                         login();
                         break;
@@ -72,7 +75,8 @@ public class StartMenu implements IMenu{
                 cout.println(iu.getMessage());
             }
         }
-        new MainMenu(u).start();
+        new MainMenu(u, mUserService,
+                new LocationService( new LocationDAO(new LocationSchema()))).start();
 
     }
 
@@ -127,7 +131,8 @@ public class StartMenu implements IMenu{
                     if(eMail.equalsIgnoreCase("exit"))
                         break credCreation;
                     try {
-                        if (mUserService.isValidEmail(eMail)) break;
+                        if (mUserService.isValidEmail(eMail) &&
+                                mUserService.isNotDuplicateEmail(eMail)) break;
                     } catch (InvalidUserException iu) {
                         cout.print(iu.getMessage()+": ");
                     }
@@ -158,7 +163,8 @@ public class StartMenu implements IMenu{
                                 User newUser = new User(null, null, uName, pWord, eMail, phone);
                                 try {
                                     mUserService.createUser(newUser);
-                                    new MainMenu(newUser).start();
+                                    new MainMenu(newUser, mUserService,
+                                            new LocationService( new LocationDAO(new LocationSchema()))).start();
                                 }
                                 catch(InvalidUserException iu) {
                                     cout.println("Account creation failed\n"+iu.getMessage());
