@@ -4,8 +4,10 @@ import com.revature.apolloracing.daos.UserDAO;
 import com.revature.apolloracing.models.User;
 import com.revature.apolloracing.util.annotations.Inject;
 import com.revature.apolloracing.util.custom_exceptions.InvalidUserException;
+import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
 
 import java.sql.SQLException;
+import java.util.List;
 
 public class UserService {
     public final String NAMEREQ =
@@ -32,12 +34,17 @@ public class UserService {
         }
     }
 
-    public void removeUser(User u) {
+    public List<User> searchUser(String s) throws SQLException, ObjectDoesNotExist {
+        return mUserDAO.getAllLike(s);
+    }
+
+    public boolean removeUser(User u) {
         try { mUserDAO.delete(u); }
         catch(SQLException e) {
             throw new InvalidUserException(e.getMessage()+
                     "\nSQLState: "+e.getSQLState());
         }
+        return true;
     }
 
     public void updateUser(User u) {
@@ -85,6 +92,12 @@ public class UserService {
         if(mail.toLowerCase().matches("^(?!.*[-.]{2})[\\w.-]+(?!@\\.)@[a-z-.]+\\.[a-z]{2,3}"))
             return true;
         throw new InvalidUserException("Please enter a valid email");
+    }
+
+    public boolean isNotDuplicateEmail(String email) throws InvalidUserException {
+        if(mUserDAO.findEmail(email))
+            throw new InvalidUserException("Email already exists in system.");
+        else return true;
     }
 
     public boolean isValidPhone(String pNum) throws InvalidUserException {

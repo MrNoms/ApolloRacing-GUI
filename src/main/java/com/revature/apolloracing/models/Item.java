@@ -2,6 +2,7 @@ package com.revature.apolloracing.models;
 
 public class Item {
     private int mID;
+    private String mName;
     private String mDescription;
     private double mPrice;
 
@@ -9,14 +10,23 @@ public class Item {
         if(id != null) mID = id;
     }
     public Item(Integer id,
-                String desc, double price) {
+                String name, String desc, double price) {
         this(id);
+        mName = name;
         mDescription = desc;
         mPrice = price;
     }
 
     public int getID() {
         return mID;
+    }
+
+    public String getName() {
+        return mName;
+    }
+
+    public void setName(String name) {
+        mName = name;
     }
 
     public String getDescription() {

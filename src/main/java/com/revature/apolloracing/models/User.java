@@ -47,7 +47,7 @@ public class User {
         return String.format(
                 "Username: %s\n" +
                         "Password: *****\n" +
-                        "Email: %s" +
+                        "Email: %s\n" +
                         "Phone: %s",
                 mUsername, mEmail, mPhone
         );

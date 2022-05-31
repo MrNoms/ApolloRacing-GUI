@@ -2,10 +2,13 @@ package com.revature.apolloracing.daos;
 
 import com.revature.apolloracing.models.User;
 import com.revature.apolloracing.util.custom_exceptions.InvalidUserException;
+import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
 import com.revature.apolloracing.util.database.DBSchema;
 import com.revature.apolloracing.util.database.UserSchema.*;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserDAO extends CrudDAO<User> {
     public UserDAO(DBSchema s) {
@@ -21,10 +24,10 @@ public class UserDAO extends CrudDAO<User> {
 
     @Override
     public void save(User u) throws SQLException {
-        PreparedStatement stmt = null;
-        try {
-            stmt = con.prepareStatement("INSERT INTO users VALUES" +
-                    "\n(?,?,?,?,?,?);");
+        try (PreparedStatement stmt = con.prepareStatement(
+                "INSERT INTO users VALUES" +
+                        "\n(?,?,?,?,?,?);")
+        ) {
 
             int col = 1;
             for (Object arg : new Object[]{
@@ -35,74 +38,49 @@ public class UserDAO extends CrudDAO<User> {
             }
 
             stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw e;
-        } finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException ignore) {}
-            }
         }
     }
 
     @Override
     public void update(User obj) throws SQLException {
-        PreparedStatement stmt = null;
 
-        try {
-            stmt = con.prepareStatement(
-                    "UPDATE users SET\n" +
-                            Cols.username + " = ?,\n" +
-                            Cols.password + " = ?,\n" +
-                            Cols.email + " = ?,\n" +
-                            Cols.phone + " = ?\n" +
-                            "WHERE id = ?;"
-            );
+        try (PreparedStatement stmt = con.prepareStatement(
+                "UPDATE users SET\n" +
+                        Cols.role + " = ?,\n" +
+                        Cols.username + " = ?,\n" +
+                        Cols.password + " = ?,\n" +
+                        Cols.email + " = ?,\n" +
+                        Cols.phone + " = ?\n" +
+                        "WHERE id = ?;")
+        ) {
             int col = 1;
             for (Object arg : new Object[]{
-                    obj.getUserName(), obj.getPassword(), obj.getEmail(),
-                    obj.getPhone(), obj.getID()
+                    obj.getRole().name(), obj.getUserName(), obj.getPassword(),
+                    obj.getEmail(), obj.getPhone(), obj.getID()
             }) {
                 stmt.setObject(col++, arg);
             }
             stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw e;
-        } finally {
-            if (stmt != null) {
-                try { stmt.close(); }
-                catch (SQLException ignore) {}
-            }
         }
     }
 
     @Override
     public void delete(User obj) throws SQLException {
-        PreparedStatement stmt = null;
 
-        try {
-            stmt = con.prepareStatement(
-                    "DELETE FROM users WHERE id = ?;"
-            );
+        try (
+                PreparedStatement stmt = con.prepareStatement(
+                        "DELETE FROM users WHERE id = ?;")
+        ) {
             stmt.setString(1, obj.getID());
 
             stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw e;
-        } finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException ignore) {}
-            }
         }
     }
 
-    public User getByCredentials(String name, String pass) throws SQLException {
+    public User getByCredentials(String name, String pass) throws SQLException, InvalidUserException {
         PreparedStatement stmt = null;
         ResultSet rs = null;
-        User out = null;
+        User out;
 
         try {
             stmt = con.prepareStatement(
@@ -115,8 +93,6 @@ public class UserDAO extends CrudDAO<User> {
             if (rs.next()) out = getObject(rs);
             else throw new InvalidUserException("Password and Username combination is incorrect.");
             return out;
-        } catch (SQLException | InvalidUserException e) {
-            throw e;
         } finally {
             if (stmt != null) {
                 try {
@@ -133,7 +109,7 @@ public class UserDAO extends CrudDAO<User> {
         }
     }
 
-    public Boolean findUsername(String name) {
+    public boolean findUsername(String name) {
         PreparedStatement stmt = null;
         ResultSet rs = null;
 
@@ -144,21 +120,67 @@ public class UserDAO extends CrudDAO<User> {
             rs = stmt.executeQuery();
             if (rs.next() && name.equals(rs.getString(Cols.username.name())))
                 return true;
-        } catch (SQLException ignore) {
-        } finally {
+        } catch (SQLException ignore) {}
+        finally {
             if (stmt != null) {
                 try {
                     stmt.close();
-                } catch (SQLException ignore) {
-                }
+                } catch (SQLException ignore) {}
             }
             if (rs != null) {
                 try {
                     rs.close();
-                } catch (SQLException ignore) {
-                }
+                } catch (SQLException ignore) {}
             }
         }
         return false;
+    }
+
+    public boolean findEmail(String email) {
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            stmt = con.prepareStatement(
+                    "SELECT * FROM users WHERE email = ?;");
+            stmt.setString(1, email);
+            rs = stmt.executeQuery();
+            if ( rs.next() && email.equals(rs.getString(Cols.email.name())) )
+                return true;
+        } catch (SQLException ignore) {}
+        finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException ignore) {}
+            }
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException ignore) {}
+            }
+        }
+        return false;
+    }
+
+    public List<User> getAllLike(String s) throws SQLException, ObjectDoesNotExist {
+        List<User> out = new ArrayList<>();
+
+        try (
+                PreparedStatement stmt =
+                        con.prepareStatement(
+                                "SELECT * FROM users WHERE \n" +
+                                        "INSTR("+Cols.username+",?) " +
+                                        "OR INSTR("+Cols.email+",?) IS TRUE;"
+                );
+        ) {
+            stmt.setString(1, s);
+            stmt.setString(2, s);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) out.add(getObject(rs));
+            if (out.isEmpty())
+                throw new ObjectDoesNotExist(schema.getTableName());
+            return out;
+        }
     }
 }

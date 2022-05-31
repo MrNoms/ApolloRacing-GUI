@@ -30,7 +30,7 @@ public abstract class CrudDAO<T> {
     public T getByID(Object id) throws SQLException {
         PreparedStatement stmt = null;
         ResultSet rs = null;
-        T out = null;
+        T out;
 
         try {
             stmt = con.prepareStatement(
@@ -43,11 +43,7 @@ public abstract class CrudDAO<T> {
             if(rs.next()) out = getObject(rs);
             else throw new ObjectDoesNotExist(schema.getTableName());
             return out;
-        }
-        catch(SQLException | ObjectDoesNotExist e) {
-            throw e;
-        }
-        finally {
+        } finally {
             if (stmt != null) {
                 try {stmt.close();}
                 catch(SQLException ignore) {}
@@ -59,33 +55,17 @@ public abstract class CrudDAO<T> {
         }
     }
 
-    List<T> getAll() throws SQLException {
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
+    public List<T> getAll() throws SQLException {
         List<T> out = new ArrayList<>();
 
-        try {
-            stmt = con.prepareStatement(
-                    "SELECT * FROM "+schema.getTableName()
-            );
-            rs = stmt.executeQuery();
-            while(rs.next()) out.add(getObject(rs));
-            if(out.isEmpty())
+        try (PreparedStatement stmt = con.prepareStatement(
+                "SELECT * FROM " + schema.getTableName());
+             ResultSet rs = stmt.executeQuery()
+        ) {
+            while (rs.next()) out.add(getObject(rs));
+            if (out.isEmpty())
                 throw new ObjectDoesNotExist(schema.getTableName());
             return out;
-        }
-        catch(SQLException | ObjectDoesNotExist e) {
-            throw e;
-        }
-        finally {
-            if (stmt != null) {
-                try {stmt.close();}
-                catch(SQLException ignore) {}
-            }
-            if(rs != null) {
-                try { rs.close(); }
-                catch(SQLException ignore) {}
-            }
         }
     }
 
