@@ -11,7 +11,7 @@ import java.util.List;
 
 public class UserService {
     public final String NAMEREQ =
-            "Username must be alphanumeric and 8-20 characters long: ";
+            "Username must be alphanumeric and 8-20 characters long.";
     private final String REPREQ = "\tNo repetitive characters\n";
     private final String ALNREQ = "\tUse letters and numbers\n";
     private final String SPECREQ = "\tUse at least one of the following ~ ` ! @ # $ % ^ & * ? ; :\n";
@@ -26,32 +26,27 @@ public class UserService {
         mUserDAO = uDAO;
     }
 
-    public void createUser(User u) {
-        try { mUserDAO.save(u); }
-        catch(SQLException e) {
-            throw new InvalidUserException(e.getMessage()+
-                    "\nSQLState: "+e.getSQLState());
-        }
+    public void createUser(User u) throws SQLException{
+        mUserDAO.save(u);
     }
 
     public List<User> searchUser(String s) throws SQLException, ObjectDoesNotExist {
         return mUserDAO.getAllLike(s);
     }
 
-    public boolean removeUser(User u) {
+    public boolean removeUser(User u) throws ObjectDoesNotExist{
         try { mUserDAO.delete(u); }
         catch(SQLException e) {
-            throw new InvalidUserException(e.getMessage()+
-                    "\nSQLState: "+e.getSQLState());
+            throw new ObjectDoesNotExist(u.getUserName());
         }
         return true;
     }
 
-    public void updateUser(User u) {
+    public void updateUser(User u) throws InvalidUserException {
         try { mUserDAO.update(u); }
         catch(SQLException e) {
-            throw new InvalidUserException(e.getMessage()+
-                    "\nSQLState: "+e.getSQLState());
+            throw new InvalidUserException("Update Failed.\n"+
+                    e.getMessage()+"\nSQLState: "+e.getSQLState());
         }
     }
 
@@ -68,7 +63,7 @@ public class UserService {
     }
 
     public boolean isValidPassword(String pWord) throws InvalidUserException {
-        if(pWord.matches("^(?=.*[~`!@#$%^&*?;:\\w]+)(?!.*(.)\\1\\1).{8,256}"))
+        if(pWord.matches("^(?=.*[~`!@#$%^&*?;:]+)(?=.*\\d+)(?=.*[a-zA-Z]+)(?!.*(.)\\1\\1).{8,256}"))
             return true;
 
         StringBuilder error = new StringBuilder("Invalid Password.\n");
@@ -79,12 +74,10 @@ public class UserService {
         throw new InvalidUserException(new String(error));
     }
 
-    public User getValidCredentials(String uName, String pWord) throws InvalidUserException {
+    public User getValidCredentials(String uName, String pWord)
+            throws SQLException, InvalidUserException {
         User out;
-        try { out = mUserDAO.getByCredentials(uName, pWord); }
-        catch (SQLException e) {
-            throw new InvalidUserException(e.getMessage());
-        }
+        out = mUserDAO.getByCredentials(uName, pWord);
         return out;
     }
 
@@ -94,7 +87,7 @@ public class UserService {
         throw new InvalidUserException("Please enter a valid email");
     }
 
-    public boolean isNotDuplicateEmail(String email) throws InvalidUserException {
+    public boolean isNotDuplicateEmail(String email) throws InvalidUserException, SQLException {
         if(mUserDAO.findEmail(email))
             throw new InvalidUserException("Email already exists in system.");
         else return true;

@@ -21,24 +21,13 @@ public class LocationDAO extends CrudDAO<Location> {
 
     @Override
     public void save(Location l) throws SQLException {
-        PreparedStatement stmt = null;
-        try {
-            stmt = con.prepareStatement(
-                    "INSERT INTO locations ("+Cols.city+","+Cols.state+") VALUES" +
-                            "\n(?, ?);"
-            );
+        try (PreparedStatement stmt = con.prepareStatement(
+                "INSERT INTO locations ("+Cols.city+","+Cols.state+") VALUES" +
+                        "\n(?, ?);")
+        ){
             stmt.setString(1, l.getCity());
             stmt.setString(2, l.getState());
             stmt.executeUpdate();
-        }
-        catch(SQLException e) {
-            throw e;
-        }
-        finally {
-            if (stmt != null) {
-                try {stmt.close();}
-                catch(SQLException ignore) {}
-            }
         }
     }
 
@@ -74,7 +63,7 @@ public class LocationDAO extends CrudDAO<Location> {
 
         try {
             stmt = con.prepareStatement(
-                    "DELETE FROM users WHERE id = ?;"
+                    "DELETE FROM locations WHERE id = ?;"
             );
             stmt.setInt(1, l.getID());
 

@@ -92,19 +92,16 @@ public class UserDAO extends CrudDAO<User> {
             //rs should return only a single record
             if (rs.next()) out = getObject(rs);
             else throw new InvalidUserException("Password and Username combination is incorrect.");
+
             return out;
         } finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException ignore) {
-                }
+            if(stmt!=null) {
+                try {stmt.close();}
+                catch(SQLException ignore) {}
             }
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException ignore) {
-                }
+            if(rs!=null) {
+                try{rs.close();}
+                catch(SQLException ignore) {}
             }
         }
     }
@@ -136,7 +133,7 @@ public class UserDAO extends CrudDAO<User> {
         return false;
     }
 
-    public boolean findEmail(String email) {
+    public boolean findEmail(String email) throws SQLException {
         PreparedStatement stmt = null;
         ResultSet rs = null;
 
@@ -145,19 +142,17 @@ public class UserDAO extends CrudDAO<User> {
                     "SELECT * FROM users WHERE email = ?;");
             stmt.setString(1, email);
             rs = stmt.executeQuery();
-            if ( rs.next() && email.equals(rs.getString(Cols.email.name())) )
+            if (rs.next() && email.equals(rs.getString(Cols.email.name())))
                 return true;
-        } catch (SQLException ignore) {}
+        }
         finally {
             if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException ignore) {}
+                try { stmt.close(); }
+                catch (SQLException ignore) {}
             }
             if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException ignore) {}
+                try { rs.close(); }
+                catch (SQLException ignore) {}
             }
         }
         return false;
@@ -165,22 +160,27 @@ public class UserDAO extends CrudDAO<User> {
 
     public List<User> getAllLike(String s) throws SQLException, ObjectDoesNotExist {
         List<User> out = new ArrayList<>();
-
+        ResultSet rs = null;
         try (
                 PreparedStatement stmt =
                         con.prepareStatement(
                                 "SELECT * FROM users WHERE \n" +
                                         "INSTR("+Cols.username+",?) " +
                                         "OR INSTR("+Cols.email+",?) IS TRUE;"
-                );
+                )
         ) {
             stmt.setString(1, s);
             stmt.setString(2, s);
-            ResultSet rs = stmt.executeQuery();
+            rs = stmt.executeQuery();
             while (rs.next()) out.add(getObject(rs));
             if (out.isEmpty())
                 throw new ObjectDoesNotExist(schema.getTableName());
             return out;
+        } finally {
+            if(rs!=null) {
+                try{rs.close();}
+                catch(SQLException ignore){}
+            }
         }
     }
 }

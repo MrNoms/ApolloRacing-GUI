@@ -10,10 +10,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class ItemDAO extends CrudDAO<Item> {
-    public enum invCols { location_id, amount }
+    public enum invCols { location_id, item_id, amount }
     public ItemDAO(DBSchema s) { super(s); }
 
     @Override
@@ -42,9 +43,9 @@ public class ItemDAO extends CrudDAO<Item> {
     void update(Item obj) throws SQLException {
         try (PreparedStatement stmt = con.prepareStatement(
                 "UPDATE items SET\n" +
-                        Cols.name + " ?,\n" +
-                        Cols.item_description + " ?,\n" +
-                        Cols.item_price + " ?\n" +
+                        Cols.name + "= ?,\n" +
+                        Cols.item_description + "= ?,\n" +
+                        Cols.item_price + "= ?\n" +
                         "WHERE id = ?;")
         ) {
             int col = 1;
@@ -69,12 +70,12 @@ public class ItemDAO extends CrudDAO<Item> {
         }
     }
 
-    public List<Item> getInStock(Integer loc, String desc) throws SQLException, ObjectDoesNotExist {
+    public LinkedHashMap<Item, Integer> getInStock(Integer loc, String desc) throws SQLException, ObjectDoesNotExist {
         ResultSet rs;
-        List<Item> out = new ArrayList<>();
+        LinkedHashMap<Item, Integer> out = new LinkedHashMap<>();
         try (PreparedStatement stmt = con.prepareStatement(
-                "SELECT (" + Cols.id + "," + Cols.name + ","+"," + Cols.item_description + "," +
-                        "," + Cols.item_price + ") FROM\n" +
+                "SELECT (" + Cols.id + "," + invCols.amount + "," + Cols.name + "," +
+                        Cols.item_description + "," + "," + Cols.item_price + ") FROM\n" +
                         "items t JOIN inventory v ON t.id = v.item_id\n" +
                         "WHERE " + invCols.amount + " > 0" +
                         (loc != null ? ", " + invCols.location_id + "=?" : "") +
@@ -87,24 +88,59 @@ public class ItemDAO extends CrudDAO<Item> {
             rs = stmt.executeQuery();
             if (!rs.isBeforeFirst()) throw new ObjectDoesNotExist("In stock items");
             else while (rs.next()) {
-                out.add(new Item((rs.getInt(Cols.id.name())),
+                out.put(new Item((rs.getInt(Cols.id.name())),
                         rs.getString(Cols.name.name()),
                         rs.getString(Cols.item_description.name()),
-                        rs.getDouble(Cols.item_price.name())));
+                        rs.getDouble(Cols.item_price.name())),
+                        rs.getInt(invCols.amount.name()));
             }
             return out;
         }
     }
 
-    public boolean saveInventoryItem(int l, int i, int amount)
+    public void startTransaction(String savePoint) throws SQLException{
+        PreparedStatement stmt = con.prepareStatement("START TRANSACTION;\nSAVEPOINT "+savePoint+";");
+        //needs to be placed within a procedure to function
+        stmt.execute();
+    }
+    public void rollbackTransaction(String savePoint) throws SQLException {
+        con.prepareStatement("ROLLBACK TO SAVEPOINT "+savePoint+";")
+                .execute();
+    }
+    public void commitTransaction() throws SQLException {
+        con.prepareStatement("COMMIT;").execute();
+    }
+
+    public boolean saveInventoryItems(int l, List<Integer> i, List<Integer> amount)
             throws SQLException {
-        try ( PreparedStatement stmt = con.prepareStatement(
-                "INSERT INTO inventory VALUES (?,?,?);")
-        ) {
+        StringBuilder update = new StringBuilder("INSERT INTO inventory VALUES");
+        for(int x = 0; x < i.size(); x++) { update.append("\n(?,?,?),"); }
+        update.replace(update.lastIndexOf(","), update.length(), ";");
+        PreparedStatement stmt = con.prepareStatement(new String(update));
+
+        try {
             int col = 1;
-            for(int arg : new int[]{l, i, amount})
-                stmt.setInt(col++, arg);
+            for(int x = 0; x < i.size(); x++) {
+                stmt.setInt(x+1, l);
+                stmt.setInt(x+2, i.get(x));
+                stmt.setInt(x+3, amount.get(x));
+            }
             return stmt.executeUpdate() > 0;
+        }
+        finally { stmt.close(); }
+    }
+
+    public void updateInventoryItems(int l, Item i, int amount)
+            throws SQLException {
+        try (PreparedStatement stmt = con.prepareStatement("" +
+                "UPDATE inventory SET "+invCols.amount+"="+invCols.amount+"+?\n" +
+                "WHERE "+invCols.location_id+"= ? AND "+invCols.item_id+"=?;")
+        ) {
+            stmt.setInt(1, amount);
+            stmt.setInt(2, l);
+            stmt.setInt(3, i.getID());
+
+            stmt.executeUpdate();
         }
     }
 }

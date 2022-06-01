@@ -45,13 +45,9 @@ public class Catalogue implements IMenu {
 
     private void printItems(Integer loc, String desc) {
         try {
-            items = mItemService.getStockedItems(loc, desc);
-            for (int i = 1; i < itemPerPage; i++) {
-                Item currItem = items.get(itemPerPage*currPage + i-1);
-
-            }
+            mItemService.getStockedItems(loc, desc);
         }
-        catch(SQLException | ObjectDoesNotExist e) {
+        catch(ObjectDoesNotExist | SQLException e) {
             cout.println(e.getMessage());
         }
     }

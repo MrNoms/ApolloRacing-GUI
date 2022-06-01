@@ -7,6 +7,7 @@ import com.revature.apolloracing.util.annotations.Inject;
 import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
 
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class ItemService {
@@ -18,13 +19,31 @@ public class ItemService {
         return mItemDAO.getAll();
     }
 
-    public List<Item> getStockedItems(Integer loc, String desc)
+    public LinkedHashMap<Item, Integer> getStockedItems(Integer loc, String desc)
             throws SQLException, ObjectDoesNotExist {
         return mItemDAO.getInStock(loc, desc);
     }
 
-    public boolean addStock(Location l, Item i, int amount)
+    public void prepareInventory(String savePoint) throws SQLException {
+        mItemDAO.startTransaction(savePoint);
+    }
+    public void revertInventory(String savePoint) throws SQLException {
+        mItemDAO.rollbackTransaction(savePoint);
+    }
+    public void solidifyInventory() throws SQLException {
+        mItemDAO.commitTransaction();
+    }
+
+    public void createStock(Location l, List<Integer> i, List<Integer> amount)
             throws SQLException {
-        return mItemDAO.saveInventoryItem(l.getID(), i.getID(), amount);
+        mItemDAO.saveInventoryItems(
+                l.getID(), i, amount);
+    }
+
+    public void addStock(Location l, List<Item> i, List<Integer> amount)
+            throws SQLException {
+        for(int x = 0; x < i.size(); x++) {
+            mItemDAO.updateInventoryItems(l.getID(), i.get(x), amount.get(x));
+        }
     }
 }

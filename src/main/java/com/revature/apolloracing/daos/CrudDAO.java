@@ -27,16 +27,15 @@ public abstract class CrudDAO<T> {
 
     public abstract void save(T obj) throws SQLException;
 
-    public T getByID(Object id) throws SQLException {
-        PreparedStatement stmt = null;
+    public T getByID(Object id) throws SQLException, ObjectDoesNotExist {
         ResultSet rs = null;
         T out;
 
-        try {
-            stmt = con.prepareStatement(
-                    "SELECT * FROM "+schema.getTableName()+
-                            "\nWHERE id = ?;"
-            );
+        try (PreparedStatement stmt = con.prepareStatement(
+                "SELECT * FROM "+schema.getTableName()+
+                        "\nWHERE id = ?;");
+        ) {
+
             stmt.setObject(1, id);
             rs = stmt.executeQuery();
 
@@ -44,10 +43,6 @@ public abstract class CrudDAO<T> {
             else throw new ObjectDoesNotExist(schema.getTableName());
             return out;
         } finally {
-            if (stmt != null) {
-                try {stmt.close();}
-                catch(SQLException ignore) {}
-            }
             if(rs != null) {
                 try { rs.close(); }
                 catch(SQLException ignore) {}
@@ -55,7 +50,7 @@ public abstract class CrudDAO<T> {
         }
     }
 
-    public List<T> getAll() throws SQLException {
+    public List<T> getAll() throws SQLException, ObjectDoesNotExist {
         List<T> out = new ArrayList<>();
 
         try (PreparedStatement stmt = con.prepareStatement(
