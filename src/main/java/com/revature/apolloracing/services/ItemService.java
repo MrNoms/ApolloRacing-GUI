@@ -7,6 +7,7 @@ import com.revature.apolloracing.util.annotations.Inject;
 import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
 
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -24,10 +25,10 @@ public class ItemService {
         return mItemDAO.getInStock(loc, desc);
     }
 
-    public void prepareInventory(String savePoint) throws SQLException {
-        mItemDAO.startTransaction(savePoint);
+    public Savepoint prepareInventory(String savePoint) throws SQLException {
+        return mItemDAO.startTransaction(savePoint);
     }
-    public void revertInventory(String savePoint) throws SQLException {
+    public void revertInventory(Savepoint savePoint) throws SQLException {
         mItemDAO.rollbackTransaction(savePoint);
     }
     public void solidifyInventory() throws SQLException {

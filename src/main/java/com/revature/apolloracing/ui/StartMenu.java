@@ -174,7 +174,6 @@ public class StartMenu implements IMenu{
                                 catch(SQLException e) {
                                     cout.println("Account creation failed\n"+e.getMessage());
                                 }
-                                break;
                             case "exit":
                                 break credCreation;
                             case "n":

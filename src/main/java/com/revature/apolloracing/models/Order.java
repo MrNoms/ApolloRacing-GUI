@@ -1,5 +1,6 @@
 package com.revature.apolloracing.models;
 
+import java.util.Date;
 import java.util.UUID;
 
 public class Order {
@@ -7,18 +8,16 @@ public class Order {
     private long mDateFulfilled; //Dates can be interpreted numerically
     private String mUserID;      //  as longs within MySQL tables
     private int mLocationID;
-    private double mOrderTotal;
 
     public Order(String id, Long date) {
         mID = id == null ? UUID.randomUUID().toString() : id;
         mDateFulfilled = date == null ? 0L : date;
     }
     public Order(String id, Long date,
-                 String userID, int locID, double total) {
+                 String userID, int locID) {
         this(id, date);
         mUserID = userID;
         mLocationID = locID;
-        mOrderTotal = total;
     }
 
     public String getID() {
@@ -41,20 +40,14 @@ public class Order {
         return mLocationID;
     }
 
-    public double getOrderTotal() {
-        return mOrderTotal;
-    }
-
-    public void setOrderTotal(double total) {
-        mOrderTotal = total;
-    }
-
     @Override
     public String toString() {
         return String.format(
                 "Order #: %s\n" +
-                        "from store N. %d. Order Total : $%f",
-                mID, mLocationID, mOrderTotal
+                        "from store N. %d.\n" +
+                        "%s",
+                mID, mLocationID, mDateFulfilled == 0L ?
+                        "In Cart" : "Date Fulfilled: "+new Date(mDateFulfilled)
         );
     }
 }

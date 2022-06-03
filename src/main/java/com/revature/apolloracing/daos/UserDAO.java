@@ -78,14 +78,13 @@ public class UserDAO extends CrudDAO<User> {
     }
 
     public User getByCredentials(String name, String pass) throws SQLException, InvalidUserException {
-        PreparedStatement stmt = null;
         ResultSet rs = null;
         User out;
 
-        try {
-            stmt = con.prepareStatement(
-                    "SELECT * FROM users\n" +
-                            "WHERE " + Cols.username + " = ? AND " + Cols.password + " = ?;");
+        try (PreparedStatement stmt = con.prepareStatement(
+                "SELECT * FROM users\n" +
+                        "WHERE STRCMP(" + Cols.username + ", ?)=0 AND STRCMP(" + Cols.password + ", ?)=0;")
+        ){
             stmt.setString(1, name);
             stmt.setString(2, pass);
             rs = stmt.executeQuery();
@@ -95,10 +94,6 @@ public class UserDAO extends CrudDAO<User> {
 
             return out;
         } finally {
-            if(stmt!=null) {
-                try {stmt.close();}
-                catch(SQLException ignore) {}
-            }
             if(rs!=null) {
                 try{rs.close();}
                 catch(SQLException ignore) {}

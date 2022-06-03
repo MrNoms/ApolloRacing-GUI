@@ -14,6 +14,7 @@ import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
 import com.revature.apolloracing.util.database.ItemSchema;
 
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.LinkedHashMap;
@@ -421,7 +422,7 @@ public class MainMenu implements IMenu {
                         receiving(iServ, locs.get(n-1));
                         break;
                     case ".":
-                        inventoryCheck(iServ, locs.get(n-1), false);
+                        inventoryCheck(iServ, locs.get(n-1), null);
                         break;
                     case "x":
                         break storeMenu;
@@ -460,7 +461,8 @@ public class MainMenu implements IMenu {
 
         LinkedHashMap<Item, Integer> inStock;
         try {
-            iServ.prepareInventory("prepInv");
+            Savepoint preReceive;
+            preReceive = iServ.prepareInventory("prepInv");
 
             inStock = iServ.getStockedItems(l.getID(), null);
             List<Item> inStockItems = new ArrayList<>(inStock.keySet());
@@ -474,25 +476,22 @@ public class MainMenu implements IMenu {
                     received.stream().filter(i->!inStockIDs.contains(i)).collect(Collectors.toList()),
                     amounts.stream().filter(a->!inStockIDs.contains(received.get(amounts.indexOf(a)))).collect(Collectors.toList())
             );
-            inventoryCheck(iServ, l, true);
+            inventoryCheck(iServ, l, preReceive);
         }
         catch(SQLException e) { cout.println(e.getMessage()+"\nState: "+e.getSQLState()); }
     }
 
-    private void inventoryCheck(ItemService iServ, Location l, boolean newItems) {
+    private void inventoryCheck(ItemService iServ, Location l, Savepoint sp) {
         try {
             iServ.getStockedItems(l.getID(), null)
                     .forEach((i, a)->cout.println("= "+a+"\t"+i));
-            if(newItems) {
-                cout.println("[] Enter CONFIRM to commit changes" +
-                        "\t[Any key] Rollback inventory changes");
-                switch (cin.nextLine()) {
-                    case "CONFIRM":
-                        iServ.solidifyInventory();
-                    default:
-                        iServ.revertInventory("prepInv");
-                }
+            if(sp != null) {
+                cout.print("Enter CONFIRM to save changes" +
+                        "\tAny other input will rollback inventory changes\n>");
+                if (cin.nextLine().equals("CONFIRM"))  iServ.solidifyInventory();
+                else iServ.revertInventory(sp);
             }
+            cout.print("Press any key to continue >"); cin.nextLine();
         }
         catch(SQLException | ObjectDoesNotExist e) {
             cout.println(e.getMessage());
