@@ -133,7 +133,7 @@ public class MainMenu implements IMenu {
                 (permission.equals(UserStatus.ADMIN) ?
                     "[6] Search for customers\n"+
                     "[7] Manage locations\n" : "")+
-                "[x] Exit\n");
+                "[x] Sign out\n");
 
     }
 
@@ -145,7 +145,7 @@ public class MainMenu implements IMenu {
                 "[4] Change account settings\n" +
                 "[5] Change user status\n" +
                 "[6] Delete user\n" +
-                "[x] Exit\n");
+                "[x] Return\n");
 
     }
 
@@ -461,21 +461,23 @@ public class MainMenu implements IMenu {
 
         LinkedHashMap<Item, Integer> inStock;
         try {
-            Savepoint preReceive;
-            preReceive = iServ.prepareInventory("prepInv");
+            iServ.prepareInventory();
 
             inStock = iServ.getStockedItems(l.getID(), null);
             List<Item> inStockItems = new ArrayList<>(inStock.keySet());
             List<Integer> inStockIDs = inStockItems.stream().map(Item::getID).collect(Collectors.toList());
 
-            iServ.addStock(l,
-                    inStockItems.stream().filter(i->received.contains(i.getID())).collect(Collectors.toList()),
-                    amounts.stream().filter(a->received.contains(inStockIDs.get(amounts.indexOf(a)))).collect(Collectors.toList()));
+            Savepoint preReceive = iServ.editInventory(iServ.toString());
+            if(!inStock.isEmpty()) {
+                iServ.addStock(l,
+                        inStockItems.stream().filter(i -> received.contains(i.getID())).collect(Collectors.toList()),
+                        amounts.stream().filter(a -> inStockIDs.contains(received.get(amounts.indexOf(a)))).collect(Collectors.toList()));
+            }
 
             iServ.createStock(l,
                     received.stream().filter(i->!inStockIDs.contains(i)).collect(Collectors.toList()),
-                    amounts.stream().filter(a->!inStockIDs.contains(received.get(amounts.indexOf(a)))).collect(Collectors.toList())
-            );
+                    amounts.stream().filter(a->!inStockIDs.contains(received.get(amounts.indexOf(a)))).collect(Collectors.toList()));
+
             inventoryCheck(iServ, l, preReceive);
         }
         catch(SQLException e) { cout.println(e.getMessage()+"\nState: "+e.getSQLState()); }
@@ -484,14 +486,14 @@ public class MainMenu implements IMenu {
     private void inventoryCheck(ItemService iServ, Location l, Savepoint sp) {
         try {
             iServ.getStockedItems(l.getID(), null)
-                    .forEach((i, a)->cout.println("= "+a+"\t"+i));
+                    .forEach((i, a)->cout.println("\n= "+a+"\t"+i));
             if(sp != null) {
                 cout.print("Enter CONFIRM to save changes" +
-                        "\tAny other input will rollback inventory changes\n>");
-                if (cin.nextLine().equals("CONFIRM"))  iServ.solidifyInventory();
+                        "\tAny other input will rollback inventory changes\n> ");
+                if (cin.nextLine().equals("CONFIRM"))  iServ.solidifyInventory(sp);
                 else iServ.revertInventory(sp);
             }
-            cout.print("Press any key to continue >"); cin.nextLine();
+            cout.print("Press [ENTER] to continue > "); cin.nextLine();
         }
         catch(SQLException | ObjectDoesNotExist e) {
             cout.println(e.getMessage());

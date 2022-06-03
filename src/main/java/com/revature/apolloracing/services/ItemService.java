@@ -25,14 +25,18 @@ public class ItemService {
         return mItemDAO.getInStock(loc, desc);
     }
 
-    public Savepoint prepareInventory(String savePoint) throws SQLException {
-        return mItemDAO.startTransaction(savePoint);
+    public void prepareInventory() throws SQLException {
+        mItemDAO.setIsolation_DirtyRead();
+    }
+
+    public Savepoint editInventory(String savePoint) throws SQLException {
+        return mItemDAO.startTransactionWithSavepoint(savePoint);
     }
     public void revertInventory(Savepoint savePoint) throws SQLException {
         mItemDAO.rollbackTransaction(savePoint);
     }
-    public void solidifyInventory() throws SQLException {
-        mItemDAO.commitTransaction();
+    public void solidifyInventory(Savepoint savepoint) throws SQLException {
+        mItemDAO.commitTransaction(savepoint);
     }
 
     public void createStock(Location l, List<Integer> i, List<Integer> amount)

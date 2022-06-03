@@ -5,10 +5,7 @@ import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
 import com.revature.apolloracing.util.database.DBSchema;
 import com.revature.apolloracing.util.database.ItemSchema.*;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Savepoint;
+import java.sql.*;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -100,14 +97,21 @@ public class ItemDAO extends CrudDAO<Item> {
         return out;
     }
 
-    public Savepoint startTransaction(String savePoint) throws SQLException{
+    public void setIsolation_DirtyRead() throws SQLException {
+        if(con.getAutoCommit()) con.setAutoCommit(false);
+        con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+    }
+
+    public Savepoint startTransactionWithSavepoint(String savePoint) throws SQLException{
         return con.setSavepoint(savePoint);
     }
     public void rollbackTransaction(Savepoint sp) throws SQLException {
         con.rollback(sp);
     }
-    public void commitTransaction() throws SQLException {
+    public void commitTransaction(Savepoint sp) throws SQLException {
         con.commit();
+        con.releaseSavepoint(sp);
+        if(!con.getAutoCommit()) con.setAutoCommit(true);
     }
 
     public void saveInventoryItems(int l, List<Integer> i, List<Integer> amount)
@@ -117,10 +121,10 @@ public class ItemDAO extends CrudDAO<Item> {
         update.replace(update.lastIndexOf(","), update.length(), ";");
 
         try (PreparedStatement stmt = con.prepareStatement(new String(update))) {
-            for (int x = 0; x < i.size(); x += 3) {
-                stmt.setInt(x + 1, l);
-                stmt.setInt(x + 2, i.get(x));
-                stmt.setInt(x + 3, amount.get(x));
+            for (int x = 0; x < i.size(); x++) {
+                stmt.setInt(3*x + 1, l);
+                stmt.setInt(3*x + 2, i.get(x));
+                stmt.setInt(3*x + 3, amount.get(x));
             }
             stmt.executeUpdate();
         }
