@@ -1,34 +1,40 @@
 package com.revature.apolloracing.models;
 
-import java.util.Date;
+import java.sql.Date;
 import java.util.UUID;
 
 public class Order {
     private String mID;
-    private long mDateFulfilled; //Dates can be interpreted numerically
-    private String mUserID;      //  as longs within MySQL tables
+    private Date mDateFulfilled;
+    private String mUserID;
     private int mLocationID;
 
-    public Order(String id, Long date) {
-        mID = id == null ? UUID.randomUUID().toString() : id;
-        mDateFulfilled = date == null ? 0L : date;
+    private Order() {
+        mID = UUID.randomUUID().toString();
+        mDateFulfilled = null;
     }
-    public Order(String id, Long date,
-                 String userID, int locID) {
-        this(id, date);
+    public Order(String userID, int locID) {
+        this();
         mUserID = userID;
         mLocationID = locID;
+    }
+
+    public Order(String mID, Date mDateFulfilled, String mUserID, int mLocationID) {
+        this.mID = mID;
+        this.mDateFulfilled = mDateFulfilled;
+        this.mUserID = mUserID;
+        this.mLocationID = mLocationID;
     }
 
     public String getID() {
         return mID;
     }
 
-    public long getDateFulfilled() {
+    public Date getDateFulfilled() {
         return mDateFulfilled;
     }
 
-    public void setDateFulfilled(long date) {
+    public void setDateFulfilled(Date date) {
         mDateFulfilled = date;
     }
 
@@ -46,8 +52,8 @@ public class Order {
                 "Order #: %s\n" +
                         "from store N. %d.\n" +
                         "%s",
-                mID, mLocationID, mDateFulfilled == 0L ?
-                        "In Cart" : "Date Fulfilled: "+new Date(mDateFulfilled)
+                mID, mLocationID, mDateFulfilled == null ?
+                        "In Cart" : "Date Fulfilled: "+mDateFulfilled
         );
     }
 }

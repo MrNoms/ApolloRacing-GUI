@@ -20,7 +20,7 @@ public class ItemService {
         return mItemDAO.getAll();
     }
 
-    public LinkedHashMap<Item, Integer> getStockedItems(Integer loc, String desc)
+    public LinkedHashMap<Item, Integer[]> getStockedItems(Integer loc, String desc)
             throws SQLException, ObjectDoesNotExist {
         return mItemDAO.getInStock(loc, desc);
     }
@@ -32,11 +32,9 @@ public class ItemService {
     public Savepoint editInventory(String savePoint) throws SQLException {
         return mItemDAO.startTransactionWithSavepoint(savePoint);
     }
-    public void revertInventory(Savepoint savePoint) throws SQLException {
-        mItemDAO.rollbackTransaction(savePoint);
-    }
-    public void solidifyInventory(Savepoint savepoint) throws SQLException {
-        mItemDAO.commitTransaction(savepoint);
+
+    public void saveInventory(Savepoint savepoint, boolean commit) throws SQLException {
+        mItemDAO.endTransaction(savepoint, commit);
     }
 
     public void createStock(Location l, List<Integer> i, List<Integer> amount)
