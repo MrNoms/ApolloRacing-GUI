@@ -1,17 +1,22 @@
 package com.revature.apolloracing.ui;
 
 import com.revature.apolloracing.daos.ItemDAO;
+import com.revature.apolloracing.daos.LocationDAO;
+import com.revature.apolloracing.daos.OrderDAO;
 import com.revature.apolloracing.models.Item;
 import com.revature.apolloracing.models.Location;
 import com.revature.apolloracing.models.User;
 import com.revature.apolloracing.models.User.UserStatus;
 import com.revature.apolloracing.services.ItemService;
 import com.revature.apolloracing.services.LocationService;
+import com.revature.apolloracing.services.OrderService;
 import com.revature.apolloracing.services.UserService;
 import com.revature.apolloracing.util.annotations.Inject;
 import com.revature.apolloracing.util.custom_exceptions.InvalidUserException;
 import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
 import com.revature.apolloracing.util.database.ItemSchema;
+import com.revature.apolloracing.util.database.LocationSchema;
+import com.revature.apolloracing.util.database.OrderSchema;
 
 import java.sql.SQLException;
 import java.sql.Savepoint;
@@ -21,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MainMenu implements IMenu {
+public class MainMenu extends IMenu {
     @Inject
     private final User mUser;
     @Inject
@@ -44,13 +49,14 @@ public class MainMenu implements IMenu {
         {
             while(true) {
                 welcomeMessage();
-                cout.print("\n> ");
+                cout.print("");
                 String input = cin.nextLine();
 
                 switch (input.toLowerCase()) {
                     case "1":
-                        cout.println("Needs implement. Show stocked items via query. Selection add item to\n" +
-                                "unfulfilled order.");
+                        new Catalog(mUser, new ItemService(new ItemDAO(new ItemSchema())),
+                                new OrderService(new OrderDAO(new OrderSchema())),
+                                new LocationService(new LocationDAO(new LocationSchema()))).start();
                         break;
                     case "2":
                         cout.println("Needs implement. Show the users cart via query and prompt order creation.");
@@ -125,7 +131,7 @@ public class MainMenu implements IMenu {
 
     private void welcomeMessage() {
         cout.println("\nWelcome to the main menu "+mUser.getUserName()+"!\n" +
-                "[1] Browse Catalogue\n" +
+                "[1] Browse Catalog\n" +
                 "[2] Check-out\n" +
                 "[3] View Order History\n" +
                 "[4] Change contact Information\n" +
@@ -156,7 +162,7 @@ public class MainMenu implements IMenu {
             cout.println("Please confirm your password.");
             while(true) {
                 try {
-                    cout.print("\n> ");
+                    prompt("\n");
                     input = cin.nextLine();
                     if (input.equalsIgnoreCase("exit")) break changeInfo;
 
@@ -173,11 +179,11 @@ public class MainMenu implements IMenu {
                         mUser.getEmail(), mUser.getPhone()
                 );
 
-                cout.print("\n> ");
+                prompt("\n");
                 input = cin.nextLine();
                 switch (input.toLowerCase()) {
                     case "1":
-                        cout.print("New E-Mail> ");
+                        prompt("New E-Mail");
                         while (true) {
                             input = cin.nextLine();
                             try {
@@ -187,12 +193,12 @@ public class MainMenu implements IMenu {
                                     break;
                                 }
                             } catch (InvalidUserException | SQLException e) {
-                                cout.print(e.getMessage() + "\n> ");
+                                prompt(e.getMessage() + "\n");
                             }
                         }
                         break;
                     case "2":
-                        cout.print("New Phone Number> ");
+                        prompt("New Phone Number ");
                         while (true) {
                             input = cin.nextLine();
                             try {
@@ -201,7 +207,7 @@ public class MainMenu implements IMenu {
                                     break;
                                 }
                             } catch (InvalidUserException iu) {
-                                cout.print(iu.getMessage() + "\n> ");
+                                prompt(iu.getMessage() + "\n");
                             }
                         }
                         break;
@@ -226,7 +232,7 @@ public class MainMenu implements IMenu {
             cout.println("Please confirm your password.");
             while(true) {
                 try {
-                    cout.print("\n> ");
+                    cout.print("\n");
                     input = cin.nextLine();
                     if (input.equalsIgnoreCase("exit")) break changeInfo;
 
@@ -243,11 +249,11 @@ public class MainMenu implements IMenu {
                          mUser.getUserName(), mUser.getPassword()
                  );
 
-                 cout.print("\n> ");
+                 prompt("\n");
                  input = cin.nextLine();
                  switch (input.toLowerCase()) {
                      case "1":
-                         cout.print("New Username> ");
+                         prompt("New Username");
                          while (true) {
                              input = cin.nextLine();
                              try {
@@ -257,12 +263,12 @@ public class MainMenu implements IMenu {
                                      break;
                                  }
                              } catch (InvalidUserException iu) {
-                                 cout.print(iu.getMessage() + "\n> ");
+                                 cout.print(iu.getMessage() + "\n");
                              }
                          }
                          break;
                      case "2":
-                         cout.print("New Password> ");
+                         cout.print("New Password");
                          while (true) {
                              input = cin.nextLine();
                              try {
@@ -271,7 +277,7 @@ public class MainMenu implements IMenu {
                                      break;
                                  }
                              } catch (InvalidUserException iu) {
-                                 cout.print(iu.getMessage() + "\n> ");
+                                 cout.print(iu.getMessage() + "\n");
                              }
                          }
                          break;
@@ -291,7 +297,7 @@ public class MainMenu implements IMenu {
 
     private void searchUser() {
         List<User> result;
-        cout.println("Enter a string to query users by> ");
+        cout.println("Enter a string to query users by");
         String query = cin.nextLine();
         try {
             result = mUserService.searchUser(query);
@@ -306,7 +312,7 @@ public class MainMenu implements IMenu {
 
 
         while(true) {
-            cout.print("\nChoose user> ");
+            cout.print("\nChoose user");
             String in = cin.nextLine();
             try {
                 if (in.equalsIgnoreCase("x")) break;
@@ -331,7 +337,7 @@ public class MainMenu implements IMenu {
             for(UserStatus s : UserStatus.values()) {
                 cout.printf("\t[%d] "+s, i++);
             }
-            cout.print("\n> ");
+            cout.print("\n");
             String in = cin.nextLine();
 
             try {
@@ -353,7 +359,7 @@ public class MainMenu implements IMenu {
     }
 
     private boolean removeUser(User u) {
-        cout.println("Type CONFIRM to delete user\n"+u+"\n>");
+        cout.println("Type CONFIRM to delete user\n"+u+"\n");
         try {
             if (cin.nextLine().equals("CONFIRM") && mUserService.removeUser(u)) {
                 cout.println("Deletion successful.");
@@ -415,7 +421,7 @@ public class MainMenu implements IMenu {
                         "[.] Confirm Stock\n" +
                         "[x] Exit\n" +
                         "\n[-] Close store");
-                cout.print("\n>");
+                cout.print("\n");
                 input = cin.nextLine();
                 switch (input.toLowerCase()) {
                     case "*":
@@ -446,11 +452,11 @@ public class MainMenu implements IMenu {
         int id, amt;
         try {
             while (true) {
-                cout.print("\nItem ID# > ");
+                cout.print("\nItem ID# ");
                 id = cin.nextInt();
                 cin.nextLine();
 
-                cout.print("Total    > ");
+                cout.print("Total    ");
                 amt = cin.nextInt();
                 cin.nextLine();
 
@@ -459,7 +465,7 @@ public class MainMenu implements IMenu {
         }
         catch(InputMismatchException ignore) {cin.nextLine();}
 
-        LinkedHashMap<Item, Integer> inStock;
+        LinkedHashMap<Item, Integer[]> inStock;
         try {
             iServ.prepareInventory();
 
@@ -486,14 +492,13 @@ public class MainMenu implements IMenu {
     private void inventoryCheck(ItemService iServ, Location l, Savepoint sp) {
         try {
             iServ.getStockedItems(l.getID(), null)
-                    .forEach((i, a)->cout.println("\n= "+a+"\t"+i));
+                    .forEach((i, a)->cout.println("\n= Item: "+a[0]+" at Store #"+a[1]+"\t"+i));
             if(sp != null) {
-                cout.print("Enter CONFIRM to save changes" +
-                        "\tAny other input will rollback inventory changes\n> ");
-                if (cin.nextLine().equals("CONFIRM"))  iServ.solidifyInventory(sp);
-                else iServ.revertInventory(sp);
+                prompt("Enter CONFIRM to save changes" +
+                        "\tAny other input will rollback inventory changes\n");
+                iServ.saveInventory(sp, cin.nextLine().equals("CONFIRM"));
             }
-            cout.print("Press [ENTER] to continue > "); cin.nextLine();
+            prompt("Press [ENTER] to continue "); cin.nextLine();
         }
         catch(SQLException | ObjectDoesNotExist e) {
             cout.println(e.getMessage());
@@ -501,9 +506,9 @@ public class MainMenu implements IMenu {
     }
 
     private void addLocation() {
-        cout.print("City> ");
+        prompt("City");
         String c = cin.nextLine();
-        cout.print("State> ");
+        prompt("State");
         String s = cin.nextLine();
         try {
             mLocService.createLocation(new Location(null, c, s));
@@ -513,7 +518,7 @@ public class MainMenu implements IMenu {
         }
     }
     private void closeStore(Location l) {
-        cout.println("Type CONFIRM for store closure at\n"+l+"\n>");
+        prompt("Type CONFIRM for store closure at\n"+l+"\n");
         try {
             if (cin.nextLine().equals("CONFIRM") && mLocService.closeStore(l)) {
                 cout.println("Deletion successful.");

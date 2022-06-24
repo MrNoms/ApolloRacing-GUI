@@ -2,6 +2,7 @@ package com.revature.apolloracing.ui;
 
 import com.revature.apolloracing.models.Item;
 import com.revature.apolloracing.models.Location;
+import com.revature.apolloracing.models.Order;
 import com.revature.apolloracing.models.User;
 import com.revature.apolloracing.services.ItemService;
 import com.revature.apolloracing.services.LocationService;
@@ -15,9 +16,8 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
-public class Catalogue extends IMenu {
+public class Catalog extends IMenu {
     @Inject
     private final User mUser;
     @Inject
@@ -32,7 +32,7 @@ public class Catalogue extends IMenu {
     private final String asc = "/\\";
     private final String desc = "\\/";
 
-    public Catalogue(User u, ItemService i, OrderService o, LocationService l) {
+    public Catalog(User u, ItemService i, OrderService o, LocationService l) {
         mUser = u;
         mItemService = i;
         mOrderService = o;
@@ -41,26 +41,36 @@ public class Catalogue extends IMenu {
 
     @Override
     public void start() {
-        LinkedHashMap<Item, Integer[]> items = new LinkedHashMap<>();
         int maxPage;
-        int itemPerPage = 10;
+        int itemPerPage = 6;
         int currPage = 0;
-        //Integer locSearch = null;
-        String descSearch = null;
         String input;
+        Order cart = null;
 
         Location loc;
         STORE_SELECTION: while(true){
             cout.println("Choose a store catalogue.");
             loc = chooseStore();
-            getStoreItems(locSearch, items);
+            currPage = 0;
+            assert loc != null : "No stores are open at the moment";
+            LinkedHashMap<Item, Integer[]> items = getStoreItems(loc.getID());
 
             STOCK_VIEW: {
-                instructions();
                 List<Item> itemList = new ArrayList<>(items.keySet());
                 maxPage = (int) Math.ceil(items.size() / (double) itemPerPage);
+                if(maxPage > 0 ) {
+                    instructions();
+                    try {
+                        cart = mOrderService.getCart(mUser, loc.getID());
+                    }
+                    catch(SQLException se) {
+                        cout.println(se.getMessage());
+                        break;
+                    }
+                }
+                else cout.println("Store is out of stock\n");
 
-                if (maxPage > 0) {
+                while (currPage < maxPage) { //basically maxPage > 0
                     cout.println(Arrays.stream(headers).reduce("", String::concat));
 
                     itemList.subList(currPage * itemPerPage, Math.min((currPage + 1) * itemPerPage, items.size()))
@@ -68,9 +78,10 @@ public class Catalogue extends IMenu {
                                     "[%d]\t%s\t\t%d\t%s\t\t%d\t\t$ %.2f\n",
                                     itemList.indexOf(i) + 1, i.getName(), items.get(i)[1], i.getDescription(), items.get(i)[0], i.getPrice()
                             ));
-                    cout.println("[*] Checkout]\n[x] Exit");
+                    cout.println("[*] Checkout\t[+] Change Store Catalog\n[x] Exit Shopping");
                     controls(currPage + 1, maxPage);
 
+                    prompt();
                     input = cin.nextLine().toLowerCase();
                     switch (input) {
                         case ">":
@@ -79,21 +90,26 @@ public class Catalogue extends IMenu {
                         case "<":
                             currPage = --currPage % maxPage;
                             break;
+                        case "+":
+                            break STOCK_VIEW;
                         case "x":
-                            break MENU;
+                            break STORE_SELECTION;
                         default:
-                            int selection;
                             try {
-                                selection = Integer.parseInt(input);
-
+                                int selection = Integer.parseInt(input) - 1;
+                                Item selected = itemList.get(selection);
+                                prompt("How Many?");
+                                int amount =  Integer.parseInt(cin.nextLine());
+                                if(mOrderService.addToCart(cart, selected, amount))
+                                    cout.printf("Successfully added %d %s to your cart\n",
+                                            amount, selected.getName());
+                                else cout.printf("Not enough %s in stock\n", selected.getName());
                                 break;
-                            } catch (NumberFormatException ignore) {
-                            }
-                            cout.println("\nInvalid input");
+                            } catch (NumberFormatException ignore) {}
+                            cout.println("\nInvalid menu option.");
 
                     }
                 }
-                else cout.println("");
             }
         }
     }
@@ -109,38 +125,39 @@ public class Catalogue extends IMenu {
     }
 
     private Location chooseStore() {
-        String input;
-        List<Location> locations = new ArrayList<>();
+        List<Location> locations;
         try {
             locations = mLocationService.getAllLocs();
+
             AtomicInteger i = new AtomicInteger();
             locations.forEach(loc -> cout.printf(
-                    "[%d] %s", i.incrementAndGet(), loc));
+                    "[%d] %s\n", i.incrementAndGet(), loc));
         } catch (SQLException | ObjectDoesNotExist ignore) {
-            cout.println("No stores are stocked at the moment.");
             return null;
         }
 
         prompt();
-        int l;
+        String input; int l;
         while(true) {
             input = cin.nextLine();
             try {
                 l = Integer.parseInt(input);
-                assert(l > 0);
-                break;
+                if(l > 0 && l < locations.size()+1) break;
+                throw new NumberFormatException("Invalid input");
             }
-            catch(NumberFormatException | AssertionError e) {
-                prompt("Invalid input.\n");
+            catch(NumberFormatException ignore) {
+                prompt("Not a menu option\n");
             }
         }
         return locations.get(l-1);
     }
 
-    private void getStoreItems(Integer l, LinkedHashMap<Item, Integer[]> itemList) {
-        try { itemList = mItemService.getStockedItems(l, null); }
+    private LinkedHashMap<Item, Integer[]> getStoreItems(Integer l) {
+        LinkedHashMap<Item, Integer[]> out = new LinkedHashMap<>();
+        try { out =  mItemService.getStockedItems(l, null); }
         catch(ObjectDoesNotExist | SQLException e) {
             cout.println(e.getMessage());
         }
+        return out;
     }
 }

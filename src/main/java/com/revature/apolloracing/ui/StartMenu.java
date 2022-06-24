@@ -10,7 +10,7 @@ import com.revature.apolloracing.util.database.LocationSchema;
 
 import java.sql.SQLException;
 
-public class StartMenu implements IMenu{
+public class StartMenu extends IMenu{
     @Inject
     private final UserService mUserService;
     @Inject
@@ -21,7 +21,7 @@ public class StartMenu implements IMenu{
         MENU: {
             while(true) {
                 welcomeMessage();
-                cout.print("\n> ");
+                prompt();
                 String input = cin.nextLine();
 
                 switch (input.toLowerCase()) {
@@ -59,13 +59,13 @@ public class StartMenu implements IMenu{
         String pWord;
         User u;
         while(true) {
-            cout.print("Type exit at any point to end this process and go back\n" +
+            prompt("Type exit at any point to end this process and go back\n" +
                     "to the start menu." +
-                    "\nUsername> ");
+                    "\nUsername");
             uName = cin.nextLine();
             if(uName.equalsIgnoreCase("exit"))
                 return;
-            cout.print("Password> ");
+            prompt("Password");
             pWord = cin.nextLine();
             if(pWord.equalsIgnoreCase("exit"))
                 return;
@@ -96,7 +96,7 @@ public class StartMenu implements IMenu{
         credCreation:
         {
             while (true) {
-                cout.print(mUserService.NAMEREQ+"\n> ");
+                prompt(mUserService.NAMEREQ+"\n");
                 while (true) {
                     uName = cin.nextLine();
                     if(uName.equalsIgnoreCase("exit"))
@@ -107,11 +107,11 @@ public class StartMenu implements IMenu{
                                 mUserService.isNotDuplicateUsername(uName))
                             break;
                     } catch (InvalidUserException iu) {
-                        cout.print(iu.getMessage()+"\n> ");
+                        cout.print(iu.getMessage()+"\n");
                     }
                 }
 
-                cout.print(mUserService.PASSREQ+"\n> ");
+                prompt(mUserService.PASSREQ+"\n");
                 while (true) {
                     pWord = cin.nextLine();
                     if(pWord.equalsIgnoreCase("exit"))
@@ -119,16 +119,16 @@ public class StartMenu implements IMenu{
 
                     try {
                         if (mUserService.isValidPassword(pWord)) {
-                            cout.print("Please confirm password: ");
+                            prompt("Please confirm password");
                             if (pWord.equals(cin.nextLine())) break;
-                            else cout.print("Passwords do not match.\n> ");
+                            else prompt("Passwords do not match.\n");
                         }
                     } catch (InvalidUserException iu) {
-                        cout.print(iu.getMessage()+"\n> ");
+                        prompt(iu.getMessage()+"\n");
                     }
                 }
 
-                cout.print("E-Mail> ");
+                cout.print("E-Mail");
                 while (true) {
                     eMail = cin.nextLine();
                     if(eMail.equalsIgnoreCase("exit"))
@@ -138,11 +138,11 @@ public class StartMenu implements IMenu{
                         if (mUserService.isValidEmail(eMail) &&
                                 mUserService.isNotDuplicateEmail(eMail)) break;
                     } catch (InvalidUserException | SQLException e) {
-                        cout.print(e.getMessage()+"\n> ");
+                        prompt(e.getMessage()+"\n");
                     }
                 }
 
-                cout.print("Please enter Phone # with your country code if you know it\n> ");
+                cout.print("Please enter Phone # with your country code if you know it\n");
                 while (true) {
                     phone = cin.nextLine();
                     if(phone.equalsIgnoreCase("exit"))
@@ -151,18 +151,18 @@ public class StartMenu implements IMenu{
                     try {
                         if (mUserService.isValidPhone(phone)) break;
                     } catch (InvalidUserException iu) {
-                        cout.print(iu.getMessage()+"\n> ");
+                        prompt(iu.getMessage()+"\n");
                     }
                 }
 
                 credConfirm:
                 {
                     while (true) {
-                        cout.print("Please confirm your username and account information:\n" +
+                        prompt("Please confirm your username and account information:\n" +
                                 "Username: " + uName +
                                 "\nEmail: " + eMail +
                                 "\nPhone: " + phone +
-                                "\nEnter y/n> ");
+                                "\nEnter y/n");
                         switch (cin.nextLine().toLowerCase()) {
                             case "y":
                                 User newUser = new User(null, null, uName, pWord, eMail, phone);

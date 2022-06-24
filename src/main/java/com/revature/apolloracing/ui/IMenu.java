@@ -3,8 +3,15 @@ package com.revature.apolloracing.ui;
 import java.io.PrintStream;
 import java.util.Scanner;
 
-public interface IMenu {
+public abstract class IMenu {
     PrintStream cout = System.out;
     Scanner cin = new Scanner(System.in);
-    void start();
+    abstract void start();
+
+    void prompt() {
+        prompt("");
+    }
+    void prompt(String str) {
+        cout.print(str.concat("> "));
+    }
 }
