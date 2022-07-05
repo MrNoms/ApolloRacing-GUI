@@ -1,12 +1,18 @@
 package com.revature.apolloracing.ui;
 
+import com.revature.apolloracing.daos.ItemDAO;
 import com.revature.apolloracing.daos.LocationDAO;
+import com.revature.apolloracing.daos.OrderDAO;
 import com.revature.apolloracing.models.User;
+import com.revature.apolloracing.services.ItemService;
 import com.revature.apolloracing.services.LocationService;
+import com.revature.apolloracing.services.OrderService;
 import com.revature.apolloracing.services.UserService;
 import com.revature.apolloracing.util.annotations.Inject;
 import com.revature.apolloracing.util.custom_exceptions.InvalidUserException;
+import com.revature.apolloracing.util.database.ItemSchema;
 import com.revature.apolloracing.util.database.LocationSchema;
+import com.revature.apolloracing.util.database.OrderSchema;
 
 import java.sql.SQLException;
 
@@ -78,7 +84,9 @@ public class StartMenu extends IMenu{
             }
         }
         new MainMenu(u, mUserService,
-                new LocationService( new LocationDAO(new LocationSchema()))).start();
+                new LocationService( new LocationDAO(new LocationSchema())),
+                new OrderService(new OrderDAO(new OrderSchema())),
+                new ItemService(new ItemDAO(new ItemSchema()))).start();
 
     }
 
@@ -169,7 +177,9 @@ public class StartMenu extends IMenu{
                                 try {
                                     mUserService.createUser(newUser);
                                     new MainMenu(newUser, mUserService,
-                                            new LocationService( new LocationDAO(new LocationSchema()))).start();
+                                            new LocationService( new LocationDAO(new LocationSchema())),
+                                            new OrderService(new OrderDAO(new OrderSchema())),
+                                            new ItemService(new ItemDAO(new ItemSchema()))).start();
                                 }
                                 catch(SQLException e) {
                                     cout.println("Account creation failed\n"+e.getMessage());

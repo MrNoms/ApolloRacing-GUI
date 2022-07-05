@@ -5,11 +5,13 @@ import com.revature.apolloracing.models.Item;
 import com.revature.apolloracing.models.Location;
 import com.revature.apolloracing.util.annotations.Inject;
 import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
+import com.revature.apolloracing.util.database.ItemSchema;
 
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ItemService {
     @Inject
@@ -20,7 +22,12 @@ public class ItemService {
         return mItemDAO.getAll();
     }
 
-    public LinkedHashMap<Item, Integer[]> getStockedItems(Integer loc, String desc)
+    public Item getItem(Integer id) {
+        try { return mItemDAO.getByID(id); }
+        catch(SQLException ignore) { return null; }
+    }
+
+    public LinkedHashMap<Integer, Map<ItemSchema.Inv_Cols, Integer>> getStockedItems(Integer loc, String desc)
             throws SQLException, ObjectDoesNotExist {
         return mItemDAO.getInStock(loc, desc);
     }
@@ -46,7 +53,16 @@ public class ItemService {
     public void addStock(Location l, List<Item> i, List<Integer> amount)
             throws SQLException {
         for(int x = 0; x < i.size(); x++) {
-            mItemDAO.updateInventoryItems(l.getID(), i.get(x), amount.get(x));
+            mItemDAO.addInventoryItems(l.getID(), i.get(x), amount.get(x));
         }
+    }
+
+    public boolean sellItems(Map<Integer, Integer[]> newOrder, Integer locID) {
+        newOrder.forEach((itemID, quanAMT) -> {
+            try {
+                mItemDAO.updateInventoryItems(locID, getItem(itemID), quanAMT[1]-quanAMT[0]);
+            } catch (SQLException ignore) {}
+        });
+        return true;
     }
 }

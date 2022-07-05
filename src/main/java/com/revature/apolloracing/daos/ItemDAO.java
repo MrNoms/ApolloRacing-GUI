@@ -3,11 +3,15 @@ package com.revature.apolloracing.daos;
 import com.revature.apolloracing.models.Item;
 import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
 import com.revature.apolloracing.util.database.DBSchema;
+import com.revature.apolloracing.util.database.ItemSchema;
 import com.revature.apolloracing.util.database.ItemSchema.*;
 
 import java.sql.*;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ItemDAO extends CrudDAO<Item> {
     public ItemDAO(DBSchema s) { super(s); }
@@ -65,14 +69,14 @@ public class ItemDAO extends CrudDAO<Item> {
         }
     }
 
-    public LinkedHashMap<Item, Integer[]> getInStock(Integer loc, String desc) throws SQLException, ObjectDoesNotExist {
+    public LinkedHashMap<Integer, Map<ItemSchema.Inv_Cols, Integer>> getInStock(Integer loc, String desc)
+            throws SQLException, ObjectDoesNotExist {
         ResultSet rs = null;
-        LinkedHashMap<Item, Integer[]> out = new LinkedHashMap<>();
+        LinkedHashMap<Integer, Map<ItemSchema.Inv_Cols, Integer>> out = new LinkedHashMap<>();
 
         try (PreparedStatement stmt = con.prepareStatement(
-                "SELECT " + Cols.id + "," + Inv_Cols.location_id + "," + Inv_Cols.amount + "," + Cols.name + "," +
-                        Cols.item_description + "," + Cols.item_price + " FROM\n" +
-                        "items t JOIN inventory v ON t.id = v.item_id\n" +
+                "SELECT t." + Cols.id + "," + Inv_Cols.location_id + "," + Inv_Cols.amount +
+                        " FROM\n" + "items t JOIN inventory v ON t.id = v.item_id\n" +
                         "WHERE " + Inv_Cols.amount + " > 0" +
                         (loc != null ? " AND " + Inv_Cols.location_id + "=?" : "") +
                         (desc != null ? " AND " + Cols.item_description + "=?" : "") + ";")
@@ -83,10 +87,12 @@ public class ItemDAO extends CrudDAO<Item> {
 
             rs = stmt.executeQuery();
             while (rs.next()) {
-                out.put(getObject(rs),
-                        new Integer[] {rs.getInt(Inv_Cols.location_id.name()),
-                                rs.getInt(Inv_Cols.amount.name())}
-                );
+                Map<ItemSchema.Inv_Cols, Integer> itemData = Stream.of(new Object[][] {
+                        { Inv_Cols.amount, rs.getInt(Inv_Cols.amount.name()) },
+                        { Inv_Cols.location_id, rs.getInt(Inv_Cols.location_id.name()) }
+                }).collect(Collectors.toMap(data -> (ItemSchema.Inv_Cols)data[0], data -> (Integer)data[1]));
+
+                out.put(rs.getInt(Cols.id.name()), itemData);
             }
         } finally {
             if(rs!=null) {
@@ -130,10 +136,24 @@ public class ItemDAO extends CrudDAO<Item> {
         }
     }
 
+    public void addInventoryItems(int l, Item i, int amount)
+            throws SQLException {
+        try (PreparedStatement stmt = con.prepareStatement(
+                "UPDATE inventory SET "+Inv_Cols.amount+"="+Inv_Cols.amount+"+?\n" +
+                "WHERE "+Inv_Cols.location_id+"= ? AND "+Inv_Cols.item_id+"=?;")
+        ) {
+            stmt.setInt(1, amount);
+            stmt.setInt(2, l);
+            stmt.setInt(3, i.getID());
+
+            stmt.executeUpdate();
+        }
+    }
+
     public void updateInventoryItems(int l, Item i, int amount)
             throws SQLException {
-        try (PreparedStatement stmt = con.prepareStatement("" +
-                "UPDATE inventory SET "+Inv_Cols.amount+"="+Inv_Cols.amount+"+?\n" +
+        try (PreparedStatement stmt = con.prepareStatement(
+                "UPDATE inventory SET "+Inv_Cols.amount+"=+?\n" +
                 "WHERE "+Inv_Cols.location_id+"= ? AND "+Inv_Cols.item_id+"=?;")
         ) {
             stmt.setInt(1, amount);

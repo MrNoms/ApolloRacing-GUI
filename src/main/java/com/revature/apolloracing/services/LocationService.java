@@ -18,6 +18,11 @@ public class LocationService {
         mLocDAO.save(l);
     }
 
+    public Location getLocation(int id) {
+        try { return mLocDAO.getByID(id); }
+        catch(Exception e) { return null; }
+    }
+
     public List<Location> getAllLocs() throws SQLException, ObjectDoesNotExist {
         return mLocDAO.getAll();
     }

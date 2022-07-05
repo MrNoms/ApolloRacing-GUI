@@ -1,46 +1,43 @@
 package com.revature.apolloracing.ui;
 
-import com.revature.apolloracing.daos.ItemDAO;
-import com.revature.apolloracing.daos.LocationDAO;
-import com.revature.apolloracing.daos.OrderDAO;
-import com.revature.apolloracing.models.Item;
-import com.revature.apolloracing.models.Location;
-import com.revature.apolloracing.models.User;
+import com.revature.apolloracing.daos.*;
+import com.revature.apolloracing.models.*;
 import com.revature.apolloracing.models.User.UserStatus;
-import com.revature.apolloracing.services.ItemService;
-import com.revature.apolloracing.services.LocationService;
-import com.revature.apolloracing.services.OrderService;
-import com.revature.apolloracing.services.UserService;
+import com.revature.apolloracing.services.*;
 import com.revature.apolloracing.util.annotations.Inject;
 import com.revature.apolloracing.util.custom_exceptions.InvalidUserException;
 import com.revature.apolloracing.util.custom_exceptions.ObjectDoesNotExist;
-import com.revature.apolloracing.util.database.ItemSchema;
-import com.revature.apolloracing.util.database.LocationSchema;
-import com.revature.apolloracing.util.database.OrderSchema;
+import com.revature.apolloracing.util.database.*;
 
 import java.sql.SQLException;
 import java.sql.Savepoint;
-import java.util.ArrayList;
-import java.util.InputMismatchException;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class MainMenu extends IMenu {
     @Inject
     private final User mUser;
+    private final UserStatus permission;
     @Inject
     private final UserService mUserService;
     @Inject
     private final LocationService mLocService;
     @Inject
-    private final UserStatus permission;
+    private final OrderService mOrderService;
     @Inject
-    public MainMenu(User user, UserService uServ, LocationService lServ) {
+    private final ItemService mItemService;
+
+    @Inject
+    public MainMenu(User user, UserService uServ, LocationService lServ, OrderService oServ, ItemService iServ) {
         mUser = user;
+        permission = user.getRole();
+
         mUserService = uServ;
         mLocService = lServ;
-        permission = user.getRole();
+        mOrderService = oServ;
+        mItemService = iServ;
     }
 
     @Override
@@ -49,7 +46,7 @@ public class MainMenu extends IMenu {
         {
             while(true) {
                 welcomeMessage();
-                cout.print("");
+                prompt();
                 String input = cin.nextLine();
 
                 switch (input.toLowerCase()) {
@@ -59,11 +56,10 @@ public class MainMenu extends IMenu {
                                 new LocationService(new LocationDAO(new LocationSchema()))).start();
                         break;
                     case "2":
-                        cout.println("Needs implement. Show the users cart via query and prompt order creation.");
+                        viewCarts(mUser);
                         break;
                     case "3":
-                        cout.println("Needs implement. Query the database to allow user to see\n" +
-                                "list of orders and view their contents.");
+                        viewOrderHistory(mUser);
                         break;
                     case "4":
                         changeContactInfo();
@@ -96,16 +92,15 @@ public class MainMenu extends IMenu {
         {
             while(true) {
                 adminMessage(u);
-                cout.print("\n~ ");
+                prompt();
                 String input = cin.nextLine();
 
                 switch (input.toLowerCase()) {
                     case "1":
-                        cout.println("Needs implement. Show the users cart and prompt order creation.");
+                        viewCarts(u);
                         break;
                     case "2":
-                        cout.println("Needs implement. Query the database to allow user to see\n" +
-                                "list of orders and view their contents.");
+                        viewOrderHistory(u);
                         break;
                     case "3":
                         changeContactInfo();
@@ -132,7 +127,7 @@ public class MainMenu extends IMenu {
     private void welcomeMessage() {
         cout.println("\nWelcome to the main menu "+mUser.getUserName()+"!\n" +
                 "[1] Browse Catalog\n" +
-                "[2] Check-out\n" +
+                "[2] View Carts\n" +
                 "[3] View Order History\n" +
                 "[4] Change contact Information\n" +
                 "[5] Change account settings\n" +
@@ -465,24 +460,32 @@ public class MainMenu extends IMenu {
         }
         catch(InputMismatchException ignore) {cin.nextLine();}
 
-        LinkedHashMap<Item, Integer[]> inStock;
+        LinkedHashMap<Integer, Map<ItemSchema.Inv_Cols, Integer>> inStock;
         try {
             iServ.prepareInventory();
 
             inStock = iServ.getStockedItems(l.getID(), null);
-            List<Item> inStockItems = new ArrayList<>(inStock.keySet());
-            List<Integer> inStockIDs = inStockItems.stream().map(Item::getID).collect(Collectors.toList());
+            List<Integer> inStockIDs = new ArrayList<>(inStock.keySet());
 
             Savepoint preReceive = iServ.editInventory(iServ.toString());
             if(!inStock.isEmpty()) {
                 iServ.addStock(l,
-                        inStockItems.stream().filter(i -> received.contains(i.getID())).collect(Collectors.toList()),
-                        amounts.stream().filter(a -> inStockIDs.contains(received.get(amounts.indexOf(a)))).collect(Collectors.toList()));
+                        inStockIDs.stream()
+                                .filter(received::contains)
+                                .map(iServ::getItem)
+                                .collect(Collectors.toList()),
+                        amounts.stream()
+                                .filter(a -> inStockIDs.contains(received.get(amounts.indexOf(a))))
+                                .collect(Collectors.toList()));
             }
 
             iServ.createStock(l,
-                    received.stream().filter(i->!inStockIDs.contains(i)).collect(Collectors.toList()),
-                    amounts.stream().filter(a->!inStockIDs.contains(received.get(amounts.indexOf(a)))).collect(Collectors.toList()));
+                    received.stream()
+                            .filter(i->!inStockIDs.contains(i))
+                            .collect(Collectors.toList()),
+                    amounts.stream()
+                            .filter(a->!inStockIDs.contains(received.get(amounts.indexOf(a))))
+                            .collect(Collectors.toList()));
 
             inventoryCheck(iServ, l, preReceive);
         }
@@ -492,7 +495,9 @@ public class MainMenu extends IMenu {
     private void inventoryCheck(ItemService iServ, Location l, Savepoint sp) {
         try {
             iServ.getStockedItems(l.getID(), null)
-                    .forEach((i, a)->cout.println("\n= Item: "+a[0]+" at Store #"+a[1]+"\t"+i));
+                    .forEach((i, a) ->
+                            cout.println("\n= Item: "+a.get(ItemSchema.Inv_Cols.amount) +
+                                    " at Store #"+a.get(ItemSchema.Inv_Cols.location_id)+"\t"+i));
             if(sp != null) {
                 prompt("Enter CONFIRM to save changes" +
                         "\tAny other input will rollback inventory changes\n");
@@ -527,5 +532,135 @@ public class MainMenu extends IMenu {
             }
         }
         catch(ObjectDoesNotExist | SQLException ne) { cout.println(ne.getMessage()); }
+    }
+
+    private void viewCarts(User u) {
+        while(true) {
+            String input;
+            List<Order> orders = mOrderService.getAllCarts(u);
+            cout.println("\nSelect a cart to view.");
+
+            AtomicInteger i = new AtomicInteger(0);
+            orders.forEach(o -> cout.printf("[%d] Order #: %s\n\t%s\n",
+                    i.incrementAndGet(), o.getID(), mLocService.getLocation(o.getLocationID()).toString()));
+            prompt("[x] Back\n");
+            try {
+                input = cin.nextLine();
+                if(input.equalsIgnoreCase("x")) break;
+                checkout(orders.get(Integer.parseInt(input)-1).getID());
+            } catch (NumberFormatException nf) {
+                cout.println("Invalid Input.");
+            } catch (IndexOutOfBoundsException iob) {
+                cout.println("Invalid order choice.");
+            }
+        }
+
+    }
+
+    private void checkout(String orderID) {
+        Map<Integer, Double> itemizedReceipt = null;
+        Map<Integer, Integer[]> inventoryToOrder = null;
+
+        try { inventoryToOrder = mOrderService.checkInventory(orderID); }
+        catch(SQLException ignore) {
+            cout.println("Error getting order information");
+            return;
+        }
+
+        inventoryToOrder.forEach((id, iArr) -> {
+            if(iArr[0] > iArr[1]) {
+                prompt(String.format("You tried to order %d %s, but there are only %d left in stock. Enter new amount to order or 0 to remove.\n",
+                        iArr[0], mItemService.getItem(id).getName(), iArr[1]));
+            }
+
+            int newQuantity = iArr[0];
+            while(newQuantity > iArr[1]) {
+                try { newQuantity = Integer.parseInt(cin.nextLine()); }
+                catch (NumberFormatException nfe) {
+                    prompt("Not a valid amount");
+                    continue;
+                }
+
+                try { mOrderService.changeOrder(orderID, id, newQuantity); }
+                catch(SQLException se) { cout.printf("Could not update order %s\n", orderID); }
+
+            }
+        });
+
+        try { itemizedReceipt = mOrderService.getReceipt(orderID); }
+        catch(SQLException ignore) {
+            cout.println("Error getting order information");
+            return;
+        }
+
+        cout.printf("\nOrder Details\n===\n#%s\nID\tItem\t\t\t\tAmount\t\tDescription\tTotal\n", orderID);
+        AtomicReference<Double> grandTotal = new AtomicReference<>(0.0);
+        itemizedReceipt.forEach((iID, total) -> {
+            Item curr = mItemService.getItem(iID);
+            cout.printf("=%d= %s\t%d\t%s\t\t\t$ %.2f\n", iID,
+                    curr.getName(), (int)(total/curr.getPrice()), curr.getDescription(), total);
+            grandTotal.set(grandTotal.get()+total);
+        });
+        cout.printf("\t\t\tGrand Total\t\t\t$ %.2f\n", grandTotal.get());
+        cout.println("[+] Checkout\t[-] Cancel Checkout");
+
+        cout.println("If you want to change your order, enter the item number for the item you want to reduce or remove.");
+
+        ORDER_VIEW: while(true) {
+            String input = "";
+            prompt("Item/Checkout");
+            try {
+                int selection;
+                if (inventoryToOrder.containsKey(selection = Integer.parseInt(input = cin.nextLine()))) {
+                    prompt("Enter the reduced amount to order or 0 to remove ");
+                    mOrderService.changeOrder(orderID, selection, Integer.parseInt(cin.nextLine()));
+                } else cout.println("That item is not present in your order");
+            } catch (NumberFormatException nfe) {
+                switch (input) {
+                    case "-": break ORDER_VIEW;
+                    case "+":
+                        Order toFulfill = mOrderService.getOrder(orderID);
+                        if(toFulfill != null) {
+                            if(mItemService.sellItems(inventoryToOrder, toFulfill.getLocationID())) {
+                                try {
+                                    mOrderService.fulfillOrder(toFulfill);
+                                    break ORDER_VIEW;
+                                }
+                                catch(SQLException se) { cout.println("Order checkout failed\n"+se.getMessage()); }
+                            }
+                            else cout.println("Order checkout failed.");
+                        }
+                    default: cout.println("Invalid input.");
+                }
+
+            } catch (SQLException se) {
+                cout.println("Error making changes to your order.\n"+se.getMessage());
+            }
+        }
+    }
+
+    public void viewOrderHistory(User u) {
+        mOrderService.getOrderHistory(u).forEach(o -> {
+            Map<Integer, Double> itemizedReceipt;
+
+            try { itemizedReceipt = mOrderService.getReceipt(o.getID()); }
+            catch(SQLException ignore) {
+                cout.println("Error getting order information");
+                return;
+            }
+
+            cout.printf("\nOrder Details\n===\n#%s\nID\tItem\t\t\t\tAmount\t\tDescription\tTotal\n", o.getID());
+            AtomicReference<Double> grandTotal = new AtomicReference<>(0.0);
+            itemizedReceipt.forEach((iID, total) -> {
+                Item curr = mItemService.getItem(iID);
+                cout.printf("=%d= %s\t%d\t%s\t\t\t$ %.2f\n", iID,
+                        curr.getName(), (int)(total/curr.getPrice()), curr.getDescription(), total);
+                grandTotal.set(grandTotal.get()+total);
+            });
+            cout.printf("\t\t\tGrand Total\t\t\t$ %.2f\n", grandTotal.get());
+        });
+
+        prompt("Continue?");
+        cin.nextLine();
     }
 }
