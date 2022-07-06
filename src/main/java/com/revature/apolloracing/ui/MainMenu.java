@@ -263,7 +263,7 @@ public class MainMenu extends IMenu {
                          }
                          break;
                      case "2":
-                         cout.print("New Password");
+                         prompt("New Password");
                          while (true) {
                              input = cin.nextLine();
                              try {
@@ -332,7 +332,7 @@ public class MainMenu extends IMenu {
             for(UserStatus s : UserStatus.values()) {
                 cout.printf("\t[%d] "+s, i++);
             }
-            cout.print("\n");
+            prompt("\n");
             String in = cin.nextLine();
 
             try {
@@ -354,7 +354,7 @@ public class MainMenu extends IMenu {
     }
 
     private boolean removeUser(User u) {
-        cout.println("Type CONFIRM to delete user\n"+u+"\n");
+        prompt("Type CONFIRM to delete user\n"+u+"\n");
         try {
             if (cin.nextLine().equals("CONFIRM") && mUserService.removeUser(u)) {
                 cout.println("Deletion successful.");
@@ -385,8 +385,8 @@ public class MainMenu extends IMenu {
                     cout.println(e.getMessage());
                 } catch (ObjectDoesNotExist ignore) {}
 
-                cout.print("[+] Add new location\n" +
-                        "[x] Cancel\n> ");
+                prompt("[+] Add new location\n" +
+                        "[x] Cancel\n");
                 String input = cin.nextLine().toLowerCase();
                 switch (input) {
                     case "+":
@@ -416,7 +416,7 @@ public class MainMenu extends IMenu {
                         "[.] Confirm Stock\n" +
                         "[x] Exit\n" +
                         "\n[-] Close store");
-                cout.print("\n");
+                prompt("\n");
                 input = cin.nextLine();
                 switch (input.toLowerCase()) {
                     case "*":
@@ -447,12 +447,12 @@ public class MainMenu extends IMenu {
         int id, amt;
         try {
             while (true) {
-                cout.print("\nItem ID# ");
-                id = cin.nextInt();
+                prompt("\nItem ID#");
+                id = Math.max(cin.nextInt(), 0);
                 cin.nextLine();
 
-                cout.print("Total    ");
-                amt = cin.nextInt();
+                prompt("Total    ");
+                amt = Math.max(cin.nextInt(), 0);
                 cin.nextLine();
 
                 received.add(id); amounts.add(amt);
@@ -558,8 +558,7 @@ public class MainMenu extends IMenu {
     }
 
     private void checkout(String orderID) {
-        Map<Integer, Double> itemizedReceipt = null;
-        Map<Integer, Integer[]> inventoryToOrder = null;
+        Map<Integer, Integer[]> inventoryToOrder;
 
         try { inventoryToOrder = mOrderService.checkInventory(orderID); }
         catch(SQLException ignore) {
@@ -587,21 +586,7 @@ public class MainMenu extends IMenu {
             }
         });
 
-        try { itemizedReceipt = mOrderService.getReceipt(orderID); }
-        catch(SQLException ignore) {
-            cout.println("Error getting order information");
-            return;
-        }
-
-        cout.printf("\nOrder Details\n===\n#%s\nID\tItem\t\t\t\tAmount\t\tDescription\tTotal\n", orderID);
-        AtomicReference<Double> grandTotal = new AtomicReference<>(0.0);
-        itemizedReceipt.forEach((iID, total) -> {
-            Item curr = mItemService.getItem(iID);
-            cout.printf("=%d= %s\t%d\t%s\t\t\t$ %.2f\n", iID,
-                    curr.getName(), (int)(total/curr.getPrice()), curr.getDescription(), total);
-            grandTotal.set(grandTotal.get()+total);
-        });
-        cout.printf("\t\t\tGrand Total\t\t\t$ %.2f\n", grandTotal.get());
+        printReceipt(mOrderService.getOrder(orderID));
         cout.println("[+] Checkout\t[-] Cancel Checkout");
 
         cout.println("If you want to change your order, enter the item number for the item you want to reduce or remove.");
@@ -613,8 +598,11 @@ public class MainMenu extends IMenu {
                 int selection;
                 if (inventoryToOrder.containsKey(selection = Integer.parseInt(input = cin.nextLine()))) {
                     prompt("Enter the reduced amount to order or 0 to remove ");
-                    mOrderService.changeOrder(orderID, selection, Integer.parseInt(cin.nextLine()));
-                } else cout.println("That item is not present in your order");
+                    mOrderService.changeOrder(orderID,
+                            selection,
+                            Math.max(Integer.parseInt(cin.nextLine()), 0));
+                }
+                else cout.println("That item is not present in your order");
             } catch (NumberFormatException nfe) {
                 switch (input) {
                     case "-": break ORDER_VIEW;
@@ -639,28 +627,30 @@ public class MainMenu extends IMenu {
         }
     }
 
-    public void viewOrderHistory(User u) {
-        mOrderService.getOrderHistory(u).forEach(o -> {
-            Map<Integer, Double> itemizedReceipt;
-
-            try { itemizedReceipt = mOrderService.getReceipt(o.getID()); }
-            catch(SQLException ignore) {
-                cout.println("Error getting order information");
-                return;
-            }
-
-            cout.printf("\nOrder Details\n===\n#%s\nID\tItem\t\t\t\tAmount\t\tDescription\tTotal\n", o.getID());
-            AtomicReference<Double> grandTotal = new AtomicReference<>(0.0);
-            itemizedReceipt.forEach((iID, total) -> {
-                Item curr = mItemService.getItem(iID);
-                cout.printf("=%d= %s\t%d\t%s\t\t\t$ %.2f\n", iID,
-                        curr.getName(), (int)(total/curr.getPrice()), curr.getDescription(), total);
-                grandTotal.set(grandTotal.get()+total);
-            });
-            cout.printf("\t\t\tGrand Total\t\t\t$ %.2f\n", grandTotal.get());
-        });
+    private void viewOrderHistory(User u) {
+        mOrderService.getOrderHistory(u).forEach(this::printReceipt);
 
         prompt("Continue?");
         cin.nextLine();
+    }
+
+    private void printReceipt(Order o) {
+        Map<Integer, Double> itemizedReceipt;
+
+        try { itemizedReceipt = mOrderService.getReceipt(o.getID()); }
+        catch(SQLException ignore) {
+            cout.println("Error getting order information");
+            return;
+        }
+
+        cout.printf("\nOrder Details\n===\n#%s\nID\tItem\t\t\t\tAmount\t\tDescription\tTotal\n", o.getID());
+        AtomicReference<Double> grandTotal = new AtomicReference<>(0.0);
+        itemizedReceipt.forEach((iID, total) -> {
+            Item curr = mItemService.getItem(iID);
+            cout.printf("=%d= %s\t%d\t%s\t\t\t$ %.2f\n", iID,
+                    curr.getName(), (int)(total/curr.getPrice()), curr.getDescription(), total);
+            grandTotal.set(grandTotal.get()+total);
+        });
+        cout.printf("\t\t\tGrand Total\t\t\t$ %.2f\n", grandTotal.get());
     }
 }
