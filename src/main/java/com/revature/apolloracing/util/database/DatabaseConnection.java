@@ -14,8 +14,8 @@ public class DatabaseConnection {
 
     static {
         try {
-            //Class.forName("org.postgresql.Driver");
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("org.postgresql.Driver");
+            //Class.forName("com.mysql.cj.jdbc.Driver");
 
             prop.load(new FileReader("src/main/res/database/db.properties"));
 
